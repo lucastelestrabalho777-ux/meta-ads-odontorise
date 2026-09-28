@@ -8,7 +8,7 @@ operar a conta. A conta de anúncio do Meta (act_) é confirmada pelo gestor.
 
 Subcomandos:
   buscar        --nome X                     perfis do ClickUp cujo nome contém X
-  meus                                       perfis em que o campo Gestor é o dono do token
+  meus [--gestor NOME]                       perfis em que o campo Gestor é o dono do token (ou o gestor indicado, para o head)
   cadastrar     --nome X [--task ID] [--account act_X] [--sem-conta]
   definir-conta --cliente X --account act_X  grava/troca a conta Meta de um cliente cadastrado
   listar                                     cadastro local
@@ -100,7 +100,12 @@ def cmd_meus(a):
     ok, todos = clickup.perfis()
     if not ok:
         falha(todos.get("erro"))
-    meus = [clickup.resumo_perfil(t) for t in todos if uid in clickup.gestor_ids(t)]
+    if a.gestor:
+        alvo = clickup.normalizar(a.gestor)
+        meus = [clickup.resumo_perfil(t) for t in todos if any(alvo in clickup.normalizar(g) for g in (clickup.resumo_perfil(t).get("gestor") or []))]
+        nome = f"gestor {a.gestor}"
+    else:
+        meus = [clickup.resumo_perfil(t) for t in todos if uid in clickup.gestor_ids(t)]
     ativos = [p for p in meus if p.get("status") == "ativo"]
     dados = watchlist.carregar()
     cadastrados = {c.get("clickup_task_id") for c in dados["clientes"]}
@@ -194,7 +199,7 @@ def main():
     p = argparse.ArgumentParser(description="Cadastro de clientes (ClickUp -> arquivo local)")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("buscar"); s.add_argument("--nome", required=True); s.set_defaults(fn=cmd_buscar)
-    s = sub.add_parser("meus"); s.set_defaults(fn=cmd_meus)
+    s = sub.add_parser("meus"); s.add_argument("--gestor", help="perfis de outro gestor, pelo nome (para o head)"); s.set_defaults(fn=cmd_meus)
     s = sub.add_parser("cadastrar"); s.add_argument("--nome", required=True); s.add_argument("--task"); s.add_argument("--account"); s.add_argument("--sem-conta", action="store_true"); s.set_defaults(fn=cmd_cadastrar)
     s = sub.add_parser("definir-conta"); s.add_argument("--cliente", required=True); s.add_argument("--account", required=True); s.set_defaults(fn=cmd_definir_conta)
     s = sub.add_parser("listar"); s.set_defaults(fn=cmd_listar)

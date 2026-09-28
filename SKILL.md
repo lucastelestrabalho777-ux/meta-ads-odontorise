@@ -70,7 +70,7 @@ slug ou id da task. Se o cliente não estiver cadastrado, cadastrar primeiro.
 | Subcomando | O que faz |
 |---|---|
 | `buscar --nome X` | perfis do ClickUp cujo nome contém X |
-| `meus` | perfis em que o campo Gestor é o dono do token, com marcação de quem já está no cadastro |
+| `meus [--gestor NOME]` | perfis em que o campo Gestor é o dono do token (ou o gestor indicado, para o head cadastrar a carteira), com marcação de quem já está no cadastro |
 | `cadastrar --nome X [--task ID] [--account act_X]` | copia os campos operacionais do perfil para o cadastro local e sugere contas Meta candidatas |
 | `definir-conta --cliente X --account act_X` | confirma a conta Meta do cliente (o gestor escolhe; a skill confere se ele enxerga a conta) |
 | `listar` | cadastro local, com quantos ainda estão sem conta Meta |
