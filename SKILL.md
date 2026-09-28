@@ -32,6 +32,17 @@ para pessoas vão no stderr. Erro também vem em JSON, com o campo `hint` dizend
 Ainda não existe: editar conjunto ou anúncio, duplicar, ativar por script. Quando o gestor pedir algo
 que não existe, dizer isso com clareza e oferecer o que já existe. Nunca improvisar chamadas à API por fora dos scripts.
 
+## Skills do pacote (pasta `skills/`, uma por papel)
+
+| Papel | Skills |
+|---|---|
+| Gestor | /meu-dia · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros |
+| Head | /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito (mais as do gestor que leem carteira) |
+| CS | /agendar-reuniao · /resumo-reuniao · /suporte-grupo · /clientes-saudaveis |
+
+Cada uma tem o próprio SKILL.md com os dados que usa (sempre os scripts desta skill) e o formato da entrega.
+O instalador (`instalar.sh` / `instalar.ps1`) liga todas em `~/.claude/skills/`.
+
 ## Onde ficam as coisas de cada pessoa (nunca dentro da skill)
 
 | O quê | Onde |

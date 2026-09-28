@@ -38,6 +38,8 @@ CAMPOS_OPERACIONAIS = {
     "Objetivo Principal": "objetivo",
     "Drive Geral": "drive",
     "Link do Data Studio": "data_studio",
+    "Status do Projeto": "satisfacao",
+    "Health Score": "health_score",
 }
 
 _token = None
