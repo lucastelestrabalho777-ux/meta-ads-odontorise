@@ -133,7 +133,7 @@ def cmd_cadastrar(a):
         ok, info = conferir_conta(act)
         if not ok:
             falha(f"a conta {act} não está acessível para você ({info.get('erro')})",
-                  "conferir o id ou pedir ao admin da BM para atribuir a conta (passo 6, parte 1)")
+                  "conferir o id e se a conta aparece para você na Business Manager (passo 6, parte 1)")
         perfil["act_id"], perfil["act_nome"] = info["act_id"], info["act_nome"]
         if perfil.get("instagram_user") and info["instagrams"] and perfil["instagram_user"] not in [i.lower() for i in info["instagrams"]]:
             resultado["aviso"] = f"o Instagram do perfil ({perfil['instagram_user']}) não é o vinculado à conta ({', '.join(info['instagrams'])}); confira"
@@ -166,7 +166,7 @@ def cmd_definir_conta(a):
     ok, info = conferir_conta(act)
     if not ok:
         falha(f"a conta {act} não está acessível para você ({info.get('erro')})",
-              "conferir o id ou pedir ao admin da BM para atribuir a conta (passo 6, parte 1)")
+              "conferir o id e se a conta aparece para você na Business Manager (passo 6, parte 1)")
     c["act_id"], c["act_nome"] = info["act_id"], info["act_nome"]
     if info["instagrams"]:
         c["instagram_vinculado"] = info["instagrams"]

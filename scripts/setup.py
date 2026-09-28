@@ -269,7 +269,7 @@ def check_conexao(rel):
                 print(f"           · ... e mais {len(contas) - 5}")
     else:
         rel.falhou("conexao", "nenhuma conta de anúncio visível",
-                   f"pedir ao administrador da BM para atribuir a você as contas dos seus clientes ({GUIA}, parte 1) e rodar o setup de novo quando ele confirmar")
+                   f"conferir na Business Manager se as contas dos seus clientes aparecem para você ({GUIA}, parte 1); se não aparecerem, avisar a liderança e rodar o setup de novo depois")
     return resultado
 
 
