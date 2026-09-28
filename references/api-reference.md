@@ -52,6 +52,8 @@ Níveis: account, campaign, adset, ad. Segmentações: age, gender, publisher_pl
 | 4, 17, 32, 613, 80004 | limite de chamadas | esperar 60 s e repetir |
 | subcode 1885183 | app em modo Desenvolvimento | publicar o app |
 | subcode 2875030 | reel com música protegida | pedir repost com áudio livre ou usar outro post |
+| 105 (child_attachments has too many elements) | carrossel com mais de 10 cartões | escolher outro post; o script recusa antes de enviar |
+| 100, subcode 2446885 | o WhatsApp da Página é conta pessoal | conectar um WhatsApp Business à Página antes de criar conjunto de conversa |
 | subcode 3858749 | a Página está na BM do cliente e recusa o criativo | pedir ao admin da BM do cliente acesso para a pessoa |
 | subcode 3858504 | chave standard_enhancements enviada | remover a chave |
 | subcode 1870227 | advantage_audience ausente | enviar targeting_automation explícito |

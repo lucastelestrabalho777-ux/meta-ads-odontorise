@@ -26,3 +26,15 @@ Contexto: erro 2875030 ao criar o criativo a partir do post.
 ### 2026-09-28: data de início só na criação do conjunto
 Regra: definir start_time ao criar o conjunto; depois de criado, a data não muda pela API.
 Contexto: tentativa de ajustar o início após a criação foi ignorada.
+
+### 2026-09-28: carrossel com mais de 10 cartões não vira anúncio
+Regra: antes de transformar um post em anúncio, conferir se é carrossel e quantos cartões tem; acima de 10, escolher outro post.
+Contexto: erro 105 (child_attachments has too many elements) ao criar o criativo.
+
+### 2026-09-28: Página precisa de WhatsApp Business para conjunto de conversa
+Regra: conferir que a Página do cliente tem um WhatsApp Business conectado antes de criar conjunto com destino WhatsApp.
+Contexto: com número pessoal a Meta recusa o conjunto (erro 100, subcode 2446885).
+
+### 2026-09-28: teto de raio é o que a conta já usa
+Regra: o raio máximo de um conjunto novo é o maior raio já usado nos conjuntos ativos da conta; nunca acima disso.
+Contexto: conta com 15 km em uso; um teto fixo de 10 km bloqueava um conjunto que só repetia o que já existia.

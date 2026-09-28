@@ -137,8 +137,8 @@ Cria campanha, conjunto, criativo a partir de um post do Instagram e anúncio no
 3. Só depois do OK explícito repete com `--confirmo`.
 4. Valida com `read.py ad`, `read.py preview --format all` e `targeting.py auditar`.
 5. Nunca ativa. Ativar é o gestor, no Gerenciador ou por pedido explícito depois.
-Guardas no código: recusa Facebook, Audience Network e Messenger; recusa raio acima de 10 km;
-exige público explícito (advantage_audience 0 ou 1). Toda escrita fica em `~/OdontoRise/meta-ads/auditoria.jsonl`.
+Guardas no código: recusa Facebook, Audience Network e Messenger; recusa raio acima do maior raio que a conta já usa
+(ou 10 km se a conta não usa raio); exige público explícito (advantage_audience 0 ou 1); recusa carrossel com mais de 10 cartões. Toda escrita fica em `~/OdontoRise/meta-ads/auditoria.jsonl`.
 Subcomandos: `campanha`, `conjunto`, `criativo-post`, `anuncio`, `captacao` (fluxo completo).
 Pré-requisito da conta do cliente: a Página precisa ter um WhatsApp Business conectado; com número pessoal a Meta recusa o conjunto.
 

@@ -38,6 +38,8 @@ POSICOES_IG = ["stream", "story", "reels", "explore", "explore_home"]
 RECURSOS_OPT_OUT = ["advantage_plus_creative", "image_touchups", "carousel_to_video", "text_optimizations",
                     "inline_comment", "image_brightness_and_contrast", "enhance_cta", "image_templates",
                     "video_auto_crop", "add_text_overlay", "site_extensions", "image_uncrop", "adapt_to_placement"]
+RAIO_PADRAO_KM = 10.0
+MAX_CARTOES_CARROSSEL = 10
 CTA_WHATSAPP = {"type": "WHATSAPP_MESSAGE", "value": {"app_destination": "WHATSAPP", "link": "https://api.whatsapp.com/send"}}
 NOME_CAMPANHA = "[Odontorise] [Vendas] Captação de Leads - {data}"
 
@@ -81,9 +83,31 @@ def payload_campanha(a):
             "is_adset_budget_sharing_enabled": False}
 
 
-def checar_targeting(t, raio_maximo):
+def raio_em_uso(acct):
+    """Maior raio (km) já usado nos conjuntos ativos da conta: é o teto da regra 'não ampliar'."""
+    maior = 0.0
+    ok, d = lib.graph_get(f"{acct}/adsets", params={"fields": "targeting", "effective_status": json.dumps(["ACTIVE"]), "limit": 100})
+    if not ok:
+        return None
+    for s in d.get("data", []):
+        g = (s.get("targeting") or {}).get("geo_locations") or {}
+        for loc in g.get("custom_locations", []) + g.get("cities", []):
+            r = loc.get("radius")
+            if r is not None:
+                maior = max(maior, float(r))
+    return maior or None
+
+
+def checar_targeting(t, raio_maximo, acct=None):
     """Aplica as guardas da casa ao targeting. Devolve (targeting ajustado, avisos)."""
     avisos = []
+    if raio_maximo is None:
+        raio_maximo = raio_em_uso(acct) if acct else None
+        if raio_maximo is None:
+            raio_maximo = RAIO_PADRAO_KM
+            avisos.append(f"conta sem raio em uso: teto de {RAIO_PADRAO_KM:g} km")
+        else:
+            avisos.append(f"teto de raio = {raio_maximo:g} km, o maior que a conta já usa")
     plats = set(t.get("publisher_platforms") or [])
     proibidas = plats & PLATAFORMAS_PROIBIDAS
     if proibidas:
@@ -117,6 +141,19 @@ def payload_conjunto(a, targeting):
     if a.start:
         p["start_time"] = a.start
     return p
+
+
+def checar_post(media_id):
+    """Post do Instagram: carrossel com mais de 10 cartões não vira anúncio (erro 105 da Meta)."""
+    ok, d = lib.graph_get(media_id, params={"fields": "media_type,media_product_type"})
+    if not ok:
+        _falha(f"não consegui ler o post {media_id} ({d.get('erro')})", {"acao": "conferir o id da mídia e se a conta do Instagram é a do cliente"})
+    if d.get("media_type") == "CAROUSEL_ALBUM":
+        ok2, c = lib.graph_get(f"{media_id}/children", params={"fields": "id", "limit": 50})
+        n = len(c.get("data", [])) if ok2 else None
+        if n and n > MAX_CARTOES_CARROSSEL:
+            _falha(f"o post é um carrossel com {n} cartões; a Meta aceita no máximo {MAX_CARTOES_CARROSSEL} num anúncio. Escolha outro post.")
+    return d
 
 
 def welcome_message(a):
@@ -167,7 +204,7 @@ def cmd_conjunto(a):
     t = lib.parse_json_arg(a.targeting, "--targeting") or {}
     if a.advantage_audience is not None:
         t["targeting_automation"] = {"advantage_audience": int(a.advantage_audience)}
-    t, avisos = checar_targeting(t, a.raio_maximo)
+    t, avisos = checar_targeting(t, a.raio_maximo, acct)
     p = payload_conjunto(a, t)
     if not a.confirmo:
         _saida_ensaio({"conta": acct, "conjunto": p, "avisos": avisos})
@@ -180,6 +217,7 @@ def cmd_conjunto(a):
 def cmd_criativo_post(a):
     lib.init_api(quiet=True)
     acct = lib.resolve_target(a)
+    checar_post(a.media_id)
     w = welcome_message(a)
     p = payload_criativo_post(a, w)
     if not a.confirmo:
@@ -209,7 +247,8 @@ def cmd_captacao(a):
     t = lib.parse_json_arg(a.targeting, "--targeting") or {}
     if a.advantage_audience is not None:
         t["targeting_automation"] = {"advantage_audience": int(a.advantage_audience)}
-    t, avisos = checar_targeting(t, a.raio_maximo)
+    t, avisos = checar_targeting(t, a.raio_maximo, acct)
+    checar_post(a.media_id)
     w = welcome_message(a)
     pc = payload_campanha(a)
     a.campanha = "<id da campanha criada>"
@@ -247,7 +286,7 @@ def main():
         s.add_argument("--nome", required=True); s.add_argument("--page-id", required=True)
         s.add_argument("--daily-budget", type=int, required=True, help="centavos (10000 = R$ 100,00)")
         s.add_argument("--targeting", required=True, help="JSON"); s.add_argument("--advantage-audience", type=int, choices=[0, 1])
-        s.add_argument("--raio-maximo", type=float, default=10.0); s.add_argument("--start")
+        s.add_argument("--raio-maximo", type=float, default=None, help="teto em km; padrão: o maior raio que a conta já usa"); s.add_argument("--start")
 
     s = sub.add_parser("conjunto"); comum(s); s.add_argument("--campanha", required=True); args_conjunto(s); s.set_defaults(fn=cmd_conjunto)
 
