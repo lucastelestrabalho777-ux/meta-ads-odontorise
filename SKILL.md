@@ -23,7 +23,8 @@ para pessoas vão no stderr. Erro também vem em JSON, com o campo `hint` dizend
 | `clientes.py`: cadastro de clientes a partir do ClickUp | `insights.py`: métricas de mensagem e comparação de janelas |
 | | `targeting.py`: cidades, bairros, públicos |
 | | `saude.py`: saúde da conta (saldo, pagamento, reprovados, gasto sem resultado) |
-| | escrita (criar, editar, duplicar): só depois do piloto, com trava e auditoria |
+| `tarefas.py`: tarefas do ClickUp (skill /meu-dia) | editar e duplicar: só depois do piloto |
+| `create.py`: subir campanha de captação via WhatsApp (tudo pausado, com trava) | |
 
 Quando o gestor pedir algo que ainda está em construção, dizer isso com clareza e oferecer
 o que já existe. Nunca improvisar chamadas à API por fora dos scripts.
@@ -69,6 +70,26 @@ Regras do cadastro:
   mostrar a lista e pedir a escolha; nunca assumir.
 - Particularidade de um cliente (restrição de procedimento, pedido específico) vai para a
   memória do próprio gestor, não para o cadastro.
+
+## Subir campanha (`scripts/create.py`)
+
+Cria campanha, conjunto, criativo a partir de um post do Instagram e anúncio no padrão da casa
+(`references/padroes-campanha.md`), tudo PAUSED. Sem `--confirmo` o script só mostra o que enviaria
+(ensaio). O Claude:
+1. Faz o diagnóstico do padrão (campanhas ativas, página, Instagram, mensagem de boas-vindas de um anúncio ativo).
+2. Roda o ensaio e mostra ao gestor o que será criado, com o valor em reais.
+3. Só depois do OK explícito repete com `--confirmo`.
+4. Valida com `read.py ad`, `read.py preview --format all` e `targeting.py auditar`.
+5. Nunca ativa. Ativar é o gestor, no Gerenciador ou por pedido explícito depois.
+Guardas no código: recusa Facebook, Audience Network e Messenger; recusa raio acima de 10 km;
+exige público explícito (advantage_audience 0 ou 1). Toda escrita fica em `~/OdontoRise/meta-ads/auditoria.jsonl`.
+Subcomandos: `campanha`, `conjunto`, `criativo-post`, `anuncio`, `captacao` (fluxo completo).
+Pré-requisito da conta do cliente: a Página precisa ter um WhatsApp Business conectado; com número pessoal a Meta recusa o conjunto.
+
+## Tarefas do ClickUp (`scripts/tarefas.py`)
+
+`minhas --dias 7` (atrasadas, hoje, próximas, sem data), `tarefa --id X` (descrição, subtarefas, comentários),
+`reunioes --dias 14` (reuniões com clientes marcadas). Só leitura. É a base da skill /meu-dia.
 
 ## Regras da casa (valem em toda operação)
 

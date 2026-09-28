@@ -252,6 +252,37 @@ def resolve_account(args_account=None):
     return acct
 
 
+def add_target_args(parser):
+    """--account act_X ou --cliente <nome, código ou slug do cadastro>."""
+    parser.add_argument("--account", help="Conta de anúncio (act_123)")
+    parser.add_argument("--cliente", help="Cliente do cadastro local (nome, #código ou slug); resolve a conta Meta dele")
+
+
+def resolve_target(args):
+    """
+    Conta de anúncio a partir de --account ou --cliente. Com --cliente, procura no
+    cadastro local; se o cliente não tiver conta Meta definida, orienta a definir.
+    """
+    acct = getattr(args, "account", None)
+    cli = getattr(args, "cliente", None)
+    if acct:
+        return resolve_account(acct)
+    if cli:
+        from . import watchlist
+        dados = watchlist.carregar()
+        c = watchlist.resolver(dados, cli)
+        if not c:
+            print(f"ERRO: cliente '{cli}' não está no cadastro local.", file=sys.stderr)
+            print("  Cadastre com: clientes.py cadastrar --nome <nome>", file=sys.stderr)
+            sys.exit(1)
+        if not c.get("act_id"):
+            print(f"ERRO: o cliente '{c.get('nome')}' está cadastrado sem conta Meta.", file=sys.stderr)
+            print(f"  Defina com: clientes.py definir-conta --cliente {c.get('slug')} --account act_XXX", file=sys.stderr)
+            sys.exit(1)
+        return c["act_id"]
+    return resolve_account(None)
+
+
 # ---------------------------------------------------------------------------
 # Chamadas diretas (sem SDK), com o token no cabeçalho, nunca na URL
 # ---------------------------------------------------------------------------
@@ -289,6 +320,58 @@ def graph_get(path, params=None, token=None):
         return False, {"erro": redigir(err.get("message")), "code": err.get("code"),
                        "subcode": err.get("error_subcode"), "fbtrace_id": err.get("fbtrace_id")}
     return True, body
+
+
+def graph_post(path, data=None, token=None):
+    """
+    POST na Graph API (escrita). Token no cabeçalho, appsecret_proof quando houver chave.
+    Devolve (ok, dado) sem levantar exceção de rede e sem segredo na mensagem.
+    Quem chama é responsável por ter o OK do gestor e por registrar auditoria.
+    """
+    import requests
+    creds = load_credentials()
+    token = token or creds.get("META_ACCESS_TOKEN", "")
+    data = dict(data or {})
+    proof = appsecret_proof(token, creds.get("META_APP_SECRET", ""))
+    if proof:
+        data["appsecret_proof"] = proof
+    for k, v in list(data.items()):
+        if isinstance(v, (dict, list)):
+            data[k] = json.dumps(v, ensure_ascii=False)
+    url = path if path.startswith("http") else f"{GRAPH_URL}/{path.lstrip('/')}"
+    try:
+        r = requests.post(url, data=data, headers={"Authorization": f"Bearer {token}"}, timeout=API_TIMEOUT)
+        body = r.json()
+    except requests.RequestException as e:
+        return False, {"erro": f"sem resposta da Meta ({type(e).__name__})", "code": None, "rede": True}
+    except ValueError:
+        return False, {"erro": "a Meta respondeu algo que não é JSON", "code": None, "rede": True}
+    if isinstance(body, dict) and "error" in body:
+        err = body["error"]
+        out = {"erro": redigir(err.get("message")), "code": err.get("code"), "subcode": err.get("error_subcode"),
+               "fbtrace_id": err.get("fbtrace_id"), "titulo": err.get("error_user_title"), "detalhe": redigir(err.get("error_user_msg"))}
+        if out["subcode"] in _SUBCODE_HINTS:
+            out["hint"] = _SUBCODE_HINTS[out["subcode"]]
+        elif out["code"] in _HINTS:
+            out["hint"] = _HINTS[out["code"]]
+        return False, out
+    return True, body
+
+
+AUDITORIA_PATH = os.path.expanduser(os.environ.get("ODR_AUDITORIA", "~/OdontoRise/meta-ads/auditoria.jsonl"))
+
+
+def auditar(acao, conta, resumo, ids=None, quem=None):
+    """Registra uma escrita no log local da pessoa (uma linha JSON por ação). Nunca inclui token."""
+    os.makedirs(os.path.dirname(AUDITORIA_PATH), exist_ok=True)
+    linha = {"quando": datetime.now().isoformat(timespec="seconds"), "quem": quem, "acao": acao,
+             "conta": conta, "resumo": redigir(resumo), "ids": ids or {}}
+    with open(AUDITORIA_PATH, "a", encoding="utf-8") as f:
+        f.write(json.dumps(linha, ensure_ascii=False) + "\n")
+    try:
+        os.chmod(AUDITORIA_PATH, 0o600)
+    except OSError:
+        pass
 
 
 # ---------------------------------------------------------------------------
