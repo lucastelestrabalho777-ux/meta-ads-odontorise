@@ -1,0 +1,438 @@
+#!/usr/bin/env python3
+"""
+meta-ads-odontorise: biblioteca compartilhada.
+
+O que esta biblioteca faz:
+  1. Lê a credencial da pessoa em ~/OdontoRise/credentials/meta-odontorise.env
+     (o arquivo tem prioridade sobre variáveis do shell, para nunca usar o token
+     de outra conta por engano).
+  2. Inicializa o SDK oficial da Meta com a versão da Graph API fixada.
+  3. Padroniza a saída: dado em JSON no stdout, mensagens humanas no stderr,
+     erro também em JSON, com dica do que fazer.
+  4. Trata limite de chamadas (retry com espera) e delay entre escritas.
+  5. Oferece os argumentos comuns de linha de comando.
+
+Molde: skill meta-ads-ratos (Ratos de IA, abril de 2026). Adaptações: caminho
+da credencial, nomes das variáveis, versão da API fixa, timeout, retry,
+validação de placeholder, dicas de erro em português e fbtrace_id corrigido.
+"""
+
+import json
+import os
+import sys
+import time
+from datetime import datetime, timezone
+
+# ---------------------------------------------------------------------------
+# Constantes
+# ---------------------------------------------------------------------------
+
+# Versão da Graph API usada em todas as chamadas. Revisar antes de 21/01/2027,
+# quando a v21.0 deixa de ser servida. Pode ser sobrescrita por ODR_GRAPH_VERSION.
+GRAPH_VERSION = os.environ.get("ODR_GRAPH_VERSION", "v21.0")
+
+# Tempo máximo de cada chamada, em segundos.
+API_TIMEOUT = 30
+
+# Onde vive a credencial de cada pessoa. Nunca dentro da skill.
+CRED_PATH = os.path.expanduser(
+    os.environ.get("ODR_META_ENV", "~/OdontoRise/credentials/meta-odontorise.env")
+)
+
+# Variáveis que o arquivo de credencial pode ter.
+CRED_VARS = ("META_ACCESS_TOKEN", "META_APP_ID", "META_APP_SECRET", "META_BM_ID")
+
+# Valores que indicam que a pessoa ainda não preencheu o arquivo.
+_PLACEHOLDER_PREFIXES = ("COLE_", "SEU_", "SUA_", "seu-", "sua-", "XXX", "xxx")
+
+# Códigos de erro da Meta que significam limite de chamadas atingido.
+RATE_LIMIT_CODES = (4, 17, 32, 613, 80004)
+
+ONDE_GERAR_TOKEN = "Guia de IA OdontoRise, página Onboarding, passo 6, parte 3"
+
+_api_initialized = False
+_credentials = {}
+
+
+# ---------------------------------------------------------------------------
+# Dependência
+# ---------------------------------------------------------------------------
+
+def ensure_sdk():
+    """Confere se o SDK facebook-business está instalado; se não, explica como instalar."""
+    try:
+        import facebook_business  # noqa: F401
+        return True
+    except ImportError:
+        print("ERRO: o SDK 'facebook-business' não está instalado.", file=sys.stderr)
+        print("  Instale com: python3 -m pip install --user facebook-business", file=sys.stderr)
+        print("  (no Mac, se aparecer externally-managed-environment, acrescente --break-system-packages)", file=sys.stderr)
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# Credencial
+# ---------------------------------------------------------------------------
+
+def _parse_env_file(path):
+    """Lê um arquivo .env simples (CHAVE=valor), sem depender de python-dotenv."""
+    values = {}
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("export "):
+                line = line[7:]
+            if "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key:
+                values[key] = value
+    return values
+
+
+def _is_placeholder(value):
+    if not value:
+        return True
+    return any(value.startswith(p) for p in _PLACEHOLDER_PREFIXES)
+
+
+def load_credentials():
+    """
+    Carrega a credencial. Ordem: arquivo em CRED_PATH; se não existir, variáveis do shell.
+    O arquivo vence porque é o lugar combinado; o shell só serve de fallback e avisa.
+    Retorna dict com as variáveis conhecidas mais '_source' (caminho ou 'shell').
+    """
+    global _credentials
+    if _credentials:
+        return _credentials
+
+    creds = {k: "" for k in CRED_VARS}
+    if os.path.isfile(CRED_PATH):
+        file_values = _parse_env_file(CRED_PATH)
+        for k in CRED_VARS:
+            creds[k] = file_values.get(k, "")
+        creds["_source"] = CRED_PATH
+        # Aviso se o shell tem um token diferente do arquivo: o arquivo vence.
+        shell_token = os.environ.get("META_ACCESS_TOKEN")
+        if shell_token and creds["META_ACCESS_TOKEN"] and shell_token != creds["META_ACCESS_TOKEN"]:
+            print("AVISO: há um META_ACCESS_TOKEN no shell diferente do arquivo; usando o ARQUIVO.", file=sys.stderr)
+    else:
+        for k in CRED_VARS:
+            creds[k] = os.environ.get(k, "")
+        creds["_source"] = "shell"
+        if creds["META_ACCESS_TOKEN"]:
+            print(f"AVISO: arquivo {CRED_PATH} não existe; usando variáveis do shell.", file=sys.stderr)
+
+    _credentials = creds
+    return creds
+
+
+def mask_token(token):
+    """Mascara o token para nunca aparecer inteiro em log ou saída."""
+    if not token or len(token) < 12:
+        return "***"
+    return f"{token[:6]}...{token[-4:]}"
+
+
+def _exit_missing_token(creds):
+    print("ERRO: token do Meta não encontrado ou ainda com valor de exemplo.", file=sys.stderr)
+    print(f"  Arquivo esperado: {CRED_PATH}", file=sys.stderr)
+    print("  Linhas necessárias:", file=sys.stderr)
+    print("    META_ACCESS_TOKEN=<seu token de 60 dias>", file=sys.stderr)
+    print("    META_APP_ID=<id do seu aplicativo>", file=sys.stderr)
+    print("    META_APP_SECRET=<chave secreta do seu aplicativo>", file=sys.stderr)
+    print("    META_BM_ID=<id da Business Manager>", file=sys.stderr)
+    print(f"  Como gerar: {ONDE_GERAR_TOKEN}.", file=sys.stderr)
+    sys.exit(1)
+
+
+def init_api(quiet=False):
+    """Inicializa o SDK uma vez por processo, com a credencial da pessoa e a versão fixa da API."""
+    global _api_initialized
+    if _api_initialized:
+        return
+
+    ensure_sdk()
+    from facebook_business.api import FacebookAdsApi
+
+    creds = load_credentials()
+    token = creds.get("META_ACCESS_TOKEN", "")
+    if _is_placeholder(token):
+        _exit_missing_token(creds)
+
+    app_id = creds.get("META_APP_ID") or None
+    app_secret = creds.get("META_APP_SECRET") or None
+    if _is_placeholder(app_id):
+        app_id = None
+    if _is_placeholder(app_secret):
+        app_secret = None
+
+    FacebookAdsApi.init(
+        app_id=app_id,
+        app_secret=app_secret,
+        access_token=token,
+        api_version=GRAPH_VERSION,
+        timeout=API_TIMEOUT,
+    )
+    _api_initialized = True
+
+    if not quiet:
+        print(
+            f"Credencial: {creds['_source']} (token {mask_token(token)}) · Graph API {GRAPH_VERSION}",
+            file=sys.stderr,
+        )
+
+
+def resolve_account(args_account=None):
+    """
+    Resolve a conta de anúncio a partir do argumento --account.
+    Não existe conta padrão: com dezenas de contas de clientes, toda operação
+    precisa dizer em qual conta roda. O cadastro de clientes (nome para act_)
+    entra em uma parte seguinte e usará esta mesma função.
+    """
+    if not args_account:
+        print("ERRO: nenhuma conta informada.", file=sys.stderr)
+        print("  Use --account act_XXXXXXXXX (o id da conta do cliente).", file=sys.stderr)
+        sys.exit(1)
+    acct = str(args_account).strip()
+    if not acct.startswith("act_"):
+        acct = f"act_{acct}"
+    return acct
+
+
+# ---------------------------------------------------------------------------
+# Validade do token
+# ---------------------------------------------------------------------------
+
+def _fmt_ts(ts):
+    if not ts:
+        return "nunca"
+    return datetime.fromtimestamp(int(ts), tz=timezone.utc).astimezone().strftime("%d/%m/%Y %H:%M")
+
+
+def _days_left(ts):
+    if not ts:
+        return None
+    delta = datetime.fromtimestamp(int(ts), tz=timezone.utc) - datetime.now(timezone.utc)
+    return max(0, int(delta.total_seconds() // 86400))
+
+
+def token_info():
+    """
+    Consulta /debug_token e devolve validade e permissões do token da pessoa.
+    Precisa de META_APP_ID e META_APP_SECRET do aplicativo que gerou o token.
+    Nunca imprime o token: só o resumo.
+    """
+    import requests
+
+    creds = load_credentials()
+    token = creds.get("META_ACCESS_TOKEN", "")
+    app_id = creds.get("META_APP_ID", "")
+    app_secret = creds.get("META_APP_SECRET", "")
+    if _is_placeholder(token):
+        return {"ok": False, "erro": "token ausente ou com valor de exemplo"}
+    if _is_placeholder(app_id) or _is_placeholder(app_secret):
+        return {"ok": False, "erro": "META_APP_ID ou META_APP_SECRET ausentes: validade não conferida"}
+
+    r = requests.get(
+        f"https://graph.facebook.com/{GRAPH_VERSION}/debug_token",
+        params={"input_token": token, "access_token": f"{app_id}|{app_secret}"},
+        timeout=API_TIMEOUT,
+    )
+    body = r.json()
+    if "error" in body:
+        err = body["error"]
+        return {"ok": False, "erro": err.get("message"), "code": err.get("code")}
+
+    d = body.get("data", {})
+    expires = d.get("expires_at", 0)
+    data_access = d.get("data_access_expires_at", 0)
+    info = {
+        "ok": bool(d.get("is_valid")),
+        "tipo": d.get("type"),
+        "app_id": str(d.get("app_id", "")),
+        "app_confere": str(d.get("app_id", "")) == str(app_id),
+        "expira_em": _fmt_ts(expires),
+        "dias_restantes": _days_left(expires),
+        "acesso_a_dados_ate": _fmt_ts(data_access),
+        "dias_acesso_a_dados": _days_left(data_access),
+        "permissoes": sorted(d.get("scopes", [])),
+    }
+    dias = info["dias_restantes"]
+    if dias is not None and dias <= 10:
+        info["alerta"] = f"Token vence em {dias} dia(s). Gerar um novo: {ONDE_GERAR_TOKEN}."
+    return info
+
+
+# ---------------------------------------------------------------------------
+# Saída
+# ---------------------------------------------------------------------------
+
+def print_json(obj):
+    """Imprime qualquer objeto do SDK ou dict como JSON no stdout."""
+    print(json.dumps(_serialize(obj), indent=2, ensure_ascii=False, default=str))
+
+
+def _serialize(obj):
+    """Converte objetos do SDK em estruturas serializáveis."""
+    if obj is None:
+        return None
+    if isinstance(obj, (str, int, float, bool)):
+        return obj
+    if isinstance(obj, dict):
+        return {k: _serialize(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_serialize(item) for item in obj]
+    if hasattr(obj, "export_all_data"):
+        return _serialize(obj.export_all_data())
+    if hasattr(obj, "__iter__") and hasattr(obj, "params"):
+        return [_serialize(item) for item in obj]
+    try:
+        return json.loads(json.dumps(obj, default=str))
+    except (TypeError, ValueError):
+        return str(obj)
+
+
+def print_error(msg):
+    """Mensagem de erro no stderr."""
+    print(f"ERRO: {msg}", file=sys.stderr)
+
+
+# ---------------------------------------------------------------------------
+# Erros da Meta
+# ---------------------------------------------------------------------------
+
+_HINTS = {
+    190: f"Token inválido ou vencido (ou a senha do Facebook foi trocada). Gerar um novo: {ONDE_GERAR_TOKEN}.",
+    200: "Sem permissão nesta conta. Conferir se a conta foi atribuída a você na BM e se as nove permissões estão no token.",
+    10: "Permissão negada pelo aplicativo. Conferir as permissões marcadas ao gerar o token.",
+    100: "Parâmetro inválido. Conferir id, campos e formato do JSON enviado.",
+}
+_SUBCODE_HINTS = {
+    1885183: "O aplicativo está em modo Desenvolvimento. Para subir criativos ele precisa estar publicado (modo Ativo).",
+    463: f"Token expirado. Gerar um novo: {ONDE_GERAR_TOKEN}.",
+    460: f"A senha do Facebook foi trocada e o token caiu. Gerar um novo: {ONDE_GERAR_TOKEN}.",
+}
+
+
+def _fbtrace(e):
+    """Extrai o fbtrace_id do corpo do erro, se existir."""
+    try:
+        body = e.body()
+        if isinstance(body, dict):
+            return body.get("error", {}).get("fbtrace_id")
+    except Exception:
+        pass
+    return None
+
+
+def is_rate_limit(e):
+    try:
+        return e.api_error_code() in RATE_LIMIT_CODES
+    except Exception:
+        return False
+
+
+def handle_fb_error(func):
+    """Decorator: transforma erro da Meta em JSON com dica, e sai com código 1."""
+    def wrapper(*args, **kwargs):
+        ensure_sdk()
+        from facebook_business.exceptions import FacebookRequestError
+        try:
+            return func(*args, **kwargs)
+        except FacebookRequestError as e:
+            code = e.api_error_code()
+            subcode = e.api_error_subcode()
+            error_data = {
+                "error": True,
+                "message": e.api_error_message(),
+                "code": code,
+                "subcode": subcode,
+                "type": e.api_error_type(),
+                "fbtrace_id": _fbtrace(e),
+            }
+            if code in RATE_LIMIT_CODES:
+                error_data["hint"] = "Limite de chamadas atingido nesta conta. Aguardar 60 segundos e tentar de novo."
+            elif subcode in _SUBCODE_HINTS:
+                error_data["hint"] = _SUBCODE_HINTS[subcode]
+            elif code in _HINTS:
+                error_data["hint"] = _HINTS[code]
+            print(json.dumps(error_data, indent=2, ensure_ascii=False, default=str))
+            sys.exit(1)
+        except Exception as e:
+            print_error(str(e))
+            sys.exit(1)
+    return wrapper
+
+
+def retry_call(fn, tries=3, wait=60):
+    """
+    Executa fn(); se a Meta responder limite de chamadas, espera e tenta de novo.
+    Outros erros sobem na hora. Uso: retry_call(lambda: conta.get_campaigns(...)).
+    """
+    ensure_sdk()
+    from facebook_business.exceptions import FacebookRequestError
+    attempt = 0
+    while True:
+        attempt += 1
+        try:
+            return fn()
+        except FacebookRequestError as e:
+            if is_rate_limit(e) and attempt < tries:
+                print(f"Limite de chamadas: aguardando {wait}s (tentativa {attempt} de {tries})", file=sys.stderr)
+                time.sleep(wait)
+                continue
+            raise
+
+
+def safe_delay(seconds=1):
+    """Pausa entre operações de escrita."""
+    time.sleep(seconds)
+
+
+# ---------------------------------------------------------------------------
+# Argumentos comuns
+# ---------------------------------------------------------------------------
+
+def add_account_arg(parser):
+    parser.add_argument("--account", required=False, help="Conta de anúncio do cliente (ex: act_123). Obrigatória.")
+
+
+def add_fields_arg(parser):
+    parser.add_argument("--fields", help="Campos separados por vírgula (ex: name,status,id)")
+
+
+def add_pagination_args(parser):
+    parser.add_argument("--limit", type=int, default=None, help="Máximo de resultados (padrão: todos)")
+    parser.add_argument("--after", help="Cursor de paginação (próxima página)")
+    parser.add_argument("--before", help="Cursor de paginação (página anterior)")
+
+
+def add_status_filter_arg(parser, default=None):
+    parser.add_argument("--status", default=default, help="Filtrar por status: ACTIVE,PAUSED,ARCHIVED (separados por vírgula)")
+
+
+def parse_fields(fields_str):
+    if not fields_str:
+        return None
+    return [f.strip() for f in fields_str.split(",") if f.strip()]
+
+
+def parse_json_arg(json_str, arg_name="argumento"):
+    if not json_str:
+        return None
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError as e:
+        print_error(f"JSON inválido no argumento {arg_name}: {e}")
+        sys.exit(1)
+
+
+def parse_status_filter(status_str):
+    if not status_str:
+        return None
+    return [s.strip().upper() for s in status_str.split(",") if s.strip()]

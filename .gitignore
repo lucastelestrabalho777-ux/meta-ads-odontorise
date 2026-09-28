@@ -1,0 +1,20 @@
+# Segredos: nunca entram no repositório
+.env
+*.env
+credentials/
+
+# Arquivos vivos de cada pessoa (ficam em ~/OdontoRise/meta-ads/, nunca aqui)
+contas*.json
+contas*.yaml
+aprendizados-local.md
+auditoria.jsonl
+historico.md
+
+# Ambiente e cache
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.DS_Store
+.vercel
