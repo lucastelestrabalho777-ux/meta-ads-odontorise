@@ -10,8 +10,9 @@ Valem em toda operação, em qualquer conta, para qualquer papel. Não são suge
    janelas. Nunca decidir por uma janela só.
 4. **Nunca sugerir posicionamento no Facebook nem ampliar raio de localização.** Escala vem de criativo,
    verba e público.
-5. **Anúncio de conta de cliente é sempre para o paciente final.** Criativo de mentoria, curso ou
-   público dentista: parar e avisar o gestor.
+5. **Post do Instagram do cliente passa por análise antes de virar anúncio.** O Claude lê o conteúdo e
+   classifica: fala com o paciente final, sobe; mentoria, conteúdo pessoal ou sem sentido para captação,
+   não sobe e o gestor é avisado.
 6. **Rosto de paciente só com termo de consentimento assinado.** Foto de consultório: conferir se não há
    tela com dados de paciente.
 7. **Campanha sem resultado exige ação**, nunca "observar": propor criativo, público, verba ou pausa.

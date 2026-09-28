@@ -153,7 +153,7 @@ Pré-requisito da conta do cliente: a Página precisa ter um WhatsApp Business c
 2. Toda campanha, conjunto e anúncio nasce pausado. Ativar é decisão do gestor, depois de conferir.
 3. Antes de pausar um anúncio, cruzar 30, 14 e 7 dias por anúncio. Nunca decidir por uma janela só.
 4. Nunca sugerir posicionamento no Facebook nem ampliar raio de localização.
-5. Anúncio de conta de cliente é sempre para o paciente final. Criativo de mentoria, curso ou B2B: parar e avisar.
+5. Post do Instagram do cliente passa por análise antes de virar anúncio: paciente final sobe; mentoria, conteúdo pessoal ou sem sentido para captação não sobe, e o gestor é avisado.
 6. Rosto de paciente em anúncio só com termo assinado pelo paciente.
 7. Orçamento em centavos na API (5000 = R$ 50,00). Confirmar o valor com o gestor antes de enviar.
 8. Ao mostrar resultado de conta, quebrar por campanha antes de atribuir gasto ou resultado a uma campanha.

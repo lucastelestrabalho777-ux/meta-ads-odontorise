@@ -12,6 +12,8 @@ captação via WhatsApp, com três variações por procedimento. Tudo nasce paus
 3. Extrair o que já funciona na conta: página, conta do Instagram, mensagem de boas-vindas do WhatsApp,
    públicos, cidade ou bairros, posicionamentos, desligamento dos aprimoramentos.
 4. Usar isso como base. Só muda o que o gestor pediu (criativo, verba, público, nome).
+5. Ler a legenda e o conteúdo do post escolhido e classificar: fala com o paciente final (sobe) ou é mentoria,
+   conteúdo pessoal ou sem sentido para captação (não sobe; avisar o gestor e sugerir outro post).
 
 ### Depois de criar: validação
 1. Ler o anúncio criado (`read.py ad --id`) e conferir `effective_status` (não pode ser DISAPPROVED).
