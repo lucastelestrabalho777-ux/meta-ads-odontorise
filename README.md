@@ -7,14 +7,15 @@ Molde de estrutura: skill meta-ads-ratos (Ratos de IA). Conteúdo, regras e mét
 
 ## Estado
 
-Em construção, uma parte por vez. Parte 1 (biblioteca de conexão) pronta e testada em 28/09/2026.
+Em construção, uma parte por vez. Prontas e testadas com dado real em 28/09/2026: biblioteca de conexão (`scripts/lib/`), conferência do ambiente (`scripts/setup.py`) e cadastro de clientes a partir do ClickUp (`scripts/clientes.py`). O que cada skill faz e como pedir está em `SKILL.md`.
 
 ## Onde ficam as coisas
 
 | O quê | Onde | Entra no repositório? |
 |---|---|---|
 | Skill (regras, scripts, referências) | esta pasta | sim |
-| Credencial de cada pessoa | `~/OdontoRise/credentials/meta-odontorise.env` | nunca |
+| Credencial do Meta de cada pessoa | `~/OdontoRise/credentials/meta-odontorise.env` | nunca |
+| Token pessoal do ClickUp | `~/OdontoRise/credentials/clickup-odontorise.env` | nunca |
 | Cadastro de clientes, aprendizados locais, auditoria | `~/OdontoRise/meta-ads/` | nunca |
 
 ## Dependências

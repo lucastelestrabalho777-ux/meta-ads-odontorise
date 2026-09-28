@@ -1,0 +1,110 @@
+---
+name: meta-ads-odontorise
+description: Opera as contas Meta Ads dos clientes da OdontoRise (clínicas odontológicas) com campanhas de conversão ao WhatsApp. Lê contas, campanhas, conjuntos, anúncios e criativos. Entrega métricas de mensagem: mensagens iniciadas, custo por mensagem iniciada, valor gasto, CTR, CPM, alcance, impressões e frequência, por período e comparando janelas. Busca cidades, bairros e públicos para segmentação. Cria campanhas, conjuntos e anúncios sempre pausados, seguindo os padrões de Lentes, Implantes e Harmonização facial. Use quando o gestor falar de campanha, conjunto, anúncio, criativo, público, segmentação, raio, custo por mensagem, conversas no WhatsApp, resultado da conta, gasto, CTR, CPM, lentes, implante, harmonização, subir criativo, pausar, duplicar ou orçamento. Também dispara com /meta-ads-odontorise setup.
+---
+
+# meta-ads-odontorise
+
+Skill dos gestores de tráfego da OdontoRise para operar as contas Meta Ads dos clientes.
+Todos os scripts ficam na pasta `scripts/` ao lado deste arquivo e são chamados via Bash:
+
+```
+python3 <pasta da skill>/scripts/<script>.py <subcomando> [argumentos]
+```
+
+No Windows, `python` no lugar de `python3`. Os scripts devolvem JSON no stdout; mensagens
+para pessoas vão no stderr. Erro também vem em JSON, com o campo `hint` dizendo o que fazer.
+
+## Estado desta versão (28/09/2026)
+
+| Pronto | Em construção |
+|---|---|
+| `setup.py`: conferência do ambiente | `read.py`: contas, campanhas, conjuntos, anúncios, criativos |
+| `clientes.py`: cadastro de clientes a partir do ClickUp | `insights.py`: métricas de mensagem e comparação de janelas |
+| | `targeting.py`: cidades, bairros, públicos |
+| | `saude.py`: saúde da conta (saldo, pagamento, reprovados, gasto sem resultado) |
+| | escrita (criar, editar, duplicar): só depois do piloto, com trava e auditoria |
+
+Quando o gestor pedir algo que ainda está em construção, dizer isso com clareza e oferecer
+o que já existe. Nunca improvisar chamadas à API por fora dos scripts.
+
+## Onde ficam as coisas de cada pessoa (nunca dentro da skill)
+
+| O quê | Onde |
+|---|---|
+| Credencial do Meta (app próprio, token de 60 dias) | `~/OdontoRise/credentials/meta-odontorise.env` |
+| Token pessoal do ClickUp | `~/OdontoRise/credentials/clickup-odontorise.env` |
+| Cadastro de clientes | `~/OdontoRise/meta-ads/contas-odontorise.json` |
+| Aprendizados pessoais | `~/OdontoRise/meta-ads/aprendizados-local.md` |
+
+Como criar cada credencial: Guia de IA OdontoRise, página Onboarding, passos 6 e 8.
+
+## Setup (primeira vez e sempre que algo parar)
+
+Rodar `scripts/setup.py` (ou `setup.py --json` para ler o resultado). Ele confere programas,
+arquivo de credencial, validade do token, as nove permissões, conexão com a Meta e quantas
+contas a pessoa enxerga, e lista o que falta com a parte do guia que resolve. Não altera nada.
+Se o token estiver a 10 dias ou menos do vencimento, avisar o gestor antes de qualquer outra coisa.
+
+## Cadastro de clientes (`scripts/clientes.py`)
+
+O cadastro nasce do ClickUp (lista Perfil de Clientes) e fica no arquivo local do gestor.
+Antes de qualquer operação em conta, resolver o cliente pelo cadastro: nome, código (#408),
+slug ou id da task. Se o cliente não estiver cadastrado, cadastrar primeiro.
+
+| Subcomando | O que faz |
+|---|---|
+| `buscar --nome X` | perfis do ClickUp cujo nome contém X |
+| `meus` | perfis em que o campo Gestor é o dono do token, com marcação de quem já está no cadastro |
+| `cadastrar --nome X [--task ID] [--account act_X]` | copia os campos operacionais do perfil para o cadastro local e sugere contas Meta candidatas |
+| `definir-conta --cliente X --account act_X` | confirma a conta Meta do cliente (o gestor escolhe; a skill confere se ele enxerga a conta) |
+| `listar` | cadastro local, com quantos ainda estão sem conta Meta |
+| `remover --cliente X` | tira do cadastro local |
+
+Regras do cadastro:
+- Só campos operacionais saem do ClickUp: código, nome, status, fase, produto, cidade, estado,
+  especialidade, Instagram, gestor, CS, liderança, Drive e Data Studio. Dados pessoais,
+  financeiros e de contrato ficam no ClickUp.
+- A conta Meta (act_) é sempre confirmada pelo gestor. Quando `cadastrar` sugerir candidatas,
+  mostrar a lista e pedir a escolha; nunca assumir.
+- Particularidade de um cliente (restrição de procedimento, pedido específico) vai para a
+  memória do próprio gestor, não para o cadastro.
+
+## Regras da casa (valem em toda operação)
+
+1. Nada é executado sem OK explícito do gestor, item por item. Apresentar sugestões numeradas.
+2. Toda campanha, conjunto e anúncio nasce pausado. Ativar é decisão do gestor, depois de conferir.
+3. Antes de pausar um anúncio, cruzar 30, 14 e 7 dias por anúncio. Nunca decidir por uma janela só.
+4. Nunca sugerir posicionamento no Facebook nem ampliar raio de localização.
+5. Anúncio de conta de cliente é sempre para o paciente final. Criativo de mentoria, curso ou B2B: parar e avisar.
+6. Rosto de paciente em anúncio só com termo assinado pelo paciente.
+7. Orçamento em centavos na API (5000 = R$ 50,00). Confirmar o valor com o gestor antes de enviar.
+8. Ao mostrar resultado de conta, quebrar por campanha antes de atribuir gasto ou resultado a uma campanha.
+9. Token, chave secreta e senha nunca aparecem em resposta, nota, memória ou print.
+10. Textos sem travessão.
+
+## Métricas que importam
+
+Campanhas de conversão ao WhatsApp. As métricas são: mensagens iniciadas, custo por mensagem
+iniciada, valor gasto, CTR, CPM, alcance, impressões e frequência. Sempre com o período
+explícito (7, 14 ou 30 dias) e, quando o pedido for decidir algo, com as três janelas lado a lado.
+
+## Aprendizados
+
+Quando o gestor corrigir algo ("faltou o botão", "era outro público"), perguntar:
+"Quer que eu registre isso nos aprendizados para não esquecer nas próximas vezes?"
+Se sim, acrescentar em `~/OdontoRise/meta-ads/aprendizados-local.md` no formato:
+
+```
+### AAAA-MM-DD: título curto
+Regra: o que fazer sempre ou nunca.
+Contexto: o que aconteceu.
+```
+
+Ler esse arquivo antes de criar qualquer coisa. Não duplicar regra que já existe.
+
+## Segurança
+
+- Os scripts mascaram o token e limpam qualquer segredo das mensagens de erro.
+- O arquivo de credencial precisa de permissão 600; o setup reprova se estiver aberto.
+- Nenhum script escreve no ClickUp. A escrita no Meta ainda não existe nesta versão.
