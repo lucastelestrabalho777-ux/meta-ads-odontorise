@@ -1,12 +1,18 @@
-# Instalador do pacote de skills da OdontoRise (Windows). No PowerShell, depois de clonar o repositório:
-#   powershell -ExecutionPolicy Bypass -File "$HOME\.claude\skills\meta-ads-odontorise\instalar.ps1"
+# Instalador do pacote de skills da OdontoRise (Windows). Um comando no PowerShell, sem conta no GitHub:
+#   irm https://raw.githubusercontent.com/lucastelestrabalho777-ux/meta-ads-odontorise/main/instalar.ps1 | iex
+# Rodar de novo atualiza o pacote.
 # Cria %USERPROFILE%\OdontoRise (CLAUDE.md, credentials, meta-ads), liga cada skill do pacote em
 # %USERPROFILE%\.claude\skills e confere Python e a biblioteca da Meta. Não mexe em credenciais nem em contas.
 $ErrorActionPreference = "Stop"
-$Aqui = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoUrl = "https://github.com/lucastelestrabalho777-ux/meta-ads-odontorise.git"
 $Cfg = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME ".claude" }
 $Skills = Join-Path $Cfg "skills"
 $Ws = Join-Path $HOME "OdontoRise"
+$Destino = Join-Path $Skills "meta-ads-odontorise"
+$Aqui = if ($MyInvocation.MyCommand.Path) { Split-Path -Parent $MyInvocation.MyCommand.Path } else { $Destino }
+New-Item -ItemType Directory -Force -Path $Skills | Out-Null
+if (-not (Test-Path (Join-Path $Aqui "SKILL.md"))) { Write-Host "baixando o pacote em $Destino ..."; git clone -q $RepoUrl $Destino; $Aqui = $Destino }
+elseif (Test-Path (Join-Path $Aqui ".git")) { Write-Host "atualizando o pacote ..."; git -C $Aqui pull -q --ff-only }
 Write-Host "Pacote: $Aqui"
 New-Item -ItemType Directory -Force -Path (Join-Path $Ws "credentials"), (Join-Path $Ws "meta-ads"), $Skills | Out-Null
 if (-not (Test-Path (Join-Path $Ws "CLAUDE.md"))) { Copy-Item (Join-Path $Aqui "workspace\CLAUDE.md") (Join-Path $Ws "CLAUDE.md"); Write-Host "criado: $Ws\CLAUDE.md" }

@@ -1,13 +1,26 @@
 #!/usr/bin/env bash
-# Instalador do pacote de skills da OdontoRise (Mac e Linux). Rode uma vez depois de clonar o repositório:
-#   bash ~/.claude/skills/meta-ads-odontorise/instalar.sh
-# O que faz: cria ~/OdontoRise (CLAUDE.md, credentials/, meta-ads/), liga cada skill do pacote em
-# ~/.claude/skills/ e confere Python e a biblioteca da Meta. Não mexe em credenciais nem em contas.
+# Instalador do pacote de skills da OdontoRise (Mac e Linux). Um comando, sem conta no GitHub:
+#   curl -fsSL https://raw.githubusercontent.com/lucastelestrabalho777-ux/meta-ads-odontorise/main/instalar.sh | bash
+# Rodar de novo atualiza o pacote. O que faz: baixa (ou atualiza) o pacote em ~/.claude/skills/meta-ads-odontorise,
+# cria ~/OdontoRise (CLAUDE.md, credentials/, meta-ads/), liga cada skill em ~/.claude/skills/ e confere
+# Python e a biblioteca da Meta. Não mexe em credenciais nem em contas.
 set -e
-AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_URL="https://github.com/lucastelestrabalho777-ux/meta-ads-odontorise.git"
 CFG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 SKILLS="$CFG/skills"
 WS="$HOME/OdontoRise"
+DESTINO="$SKILLS/meta-ads-odontorise"
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "$(dirname "${BASH_SOURCE[0]}")/SKILL.md" ]; then
+  AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+else
+  AQUI="$DESTINO"
+fi
+mkdir -p "$SKILLS"
+if [ ! -f "$AQUI/SKILL.md" ]; then
+  echo "baixando o pacote em $DESTINO ..."; git clone -q "$REPO_URL" "$DESTINO"; AQUI="$DESTINO"
+elif [ -d "$AQUI/.git" ]; then
+  echo "atualizando o pacote ..."; git -C "$AQUI" pull -q --ff-only || echo "AVISO: não consegui atualizar (git pull); seguindo com a versão local"
+fi
 echo "Pacote: $AQUI"
 echo "Skills do Claude Code: $SKILLS"
 

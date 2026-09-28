@@ -18,19 +18,19 @@ Em construção, uma parte por vez. Prontas e testadas com dado real em 28/09/20
 | Token pessoal do ClickUp | `~/OdontoRise/credentials/clickup-odontorise.env` | nunca |
 | Cadastro de clientes, aprendizados locais, auditoria | `~/OdontoRise/meta-ads/` | nunca |
 
-## Instalar (gestor)
+## Instalar (gestor): um comando, sem conta no GitHub
 
-1. Conta no GitHub e convite do administrador para este repositório (privado).
-2. GitHub Desktop: File > Clone repository > este repositório, na pasta `~/.claude/skills/meta-ads-odontorise`
-   (Windows: `C:\Users\seu-nome\.claude\skills\meta-ads-odontorise`).
-3. Instalador, uma vez:
-   - Mac: `bash ~/.claude/skills/meta-ads-odontorise/instalar.sh`
-   - Windows: `powershell -ExecutionPolicy Bypass -File "$HOME\.claude\skills\meta-ads-odontorise\instalar.ps1"`
-   Ele cria `~/OdontoRise` (CLAUDE.md, credentials, meta-ads), liga as skills do pacote e instala a biblioteca da Meta.
-4. Atualizar: GitHub Desktop > Fetch origin > Pull. As skills mudam na hora.
-
+Mac (Terminal):
+```bash
+curl -fsSL https://raw.githubusercontent.com/lucastelestrabalho777-ux/meta-ads-odontorise/main/instalar.sh | bash
+```
+Windows (PowerShell):
+```powershell
+irm https://raw.githubusercontent.com/lucastelestrabalho777-ux/meta-ads-odontorise/main/instalar.ps1 | iex
+```
+O instalador baixa o pacote em `~/.claude/skills/meta-ads-odontorise`, cria `~/OdontoRise` (CLAUDE.md, credentials, meta-ads),
+liga as skills e instala a biblioteca da Meta. Para atualizar, rode o mesmo comando de novo.
 Passo a passo com telas: Guia de IA OdontoRise, página Onboarding, passos 4 e 5.
-
 
 ## Regras de segredo
 
