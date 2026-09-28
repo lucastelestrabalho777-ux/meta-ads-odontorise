@@ -17,7 +17,7 @@ Subcomandos:
                    30, 14 e 7 dias lado a lado por objeto: pré-requisito para pausar qualquer coisa
 
 Saída sempre em JSON no stdout; mensagens humanas no stderr.
-Códigos de saída: 0 ok · 1 erro da Meta ou de ambiente · 2 argumento inválido
+Códigos de saída: 0 ok · 2 data ou limite inválidos · 1 demais erros (Meta, ambiente, JSON de argumento, conta ausente)
 
 Molde: skill meta-ads-ratos (insights.py). Adaptações: --account/--cliente do cadastro
 local, last_7d como padrão, campos padrão da casa, atribuição unificada só com flag,
@@ -469,6 +469,18 @@ def _params_janela(args, faixa, limite):
     return params
 
 
+def _hoje_da_conta(acct):
+    """Data de hoje no fuso da conta de anúncio (a Meta fecha o dia nesse fuso), com fallback local."""
+    try:
+        from zoneinfo import ZoneInfo
+        ok, d = lib.graph_get(acct, params={"fields": "timezone_name"})
+        if ok and d.get("timezone_name"):
+            return datetime.now(ZoneInfo(d["timezone_name"])).date()
+    except Exception:
+        pass
+    return date.today()
+
+
 def _guardar(achados, rows, nivel, rotulo):
     """Guarda as métricas de cada linha no objeto certo, sob o rótulo da janela."""
     for r in rows:
@@ -483,7 +495,7 @@ def cmd_comparar_janelas(args):
     lib.init_api(quiet=True)
     acct = lib.resolve_target(args)
     limite = _limite(args.limit)
-    hoje = date.today()
+    hoje = _hoje_da_conta(acct)
     ontem = hoje - timedelta(days=1)
     janelas = {f"{n}d": {"since": (hoje - timedelta(days=n)).isoformat(), "until": ontem.isoformat()} for n in JANELAS}
 

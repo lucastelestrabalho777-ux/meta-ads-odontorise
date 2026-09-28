@@ -17,17 +17,20 @@ para pessoas vão no stderr. Erro também vem em JSON, com o campo `hint` dizend
 
 ## Estado desta versão (28/09/2026)
 
-| Pronto | Em construção |
+| Pronto e testado em conta real | Observação |
 |---|---|
-| `setup.py`: conferência do ambiente | `read.py`: contas, campanhas, conjuntos, anúncios, criativos |
-| `clientes.py`: cadastro de clientes a partir do ClickUp | `insights.py`: métricas de mensagem e comparação de janelas |
-| | `targeting.py`: cidades, bairros, públicos |
-| | `saude.py`: saúde da conta (saldo, pagamento, reprovados, gasto sem resultado) |
-| `tarefas.py`: tarefas do ClickUp (skill /meu-dia) | editar e duplicar: só depois do piloto |
-| `create.py`: subir campanha de captação via WhatsApp (tudo pausado, com trava) | |
+| `setup.py` conferência do ambiente | |
+| `clientes.py` cadastro a partir do ClickUp | |
+| `read.py` contas, campanhas, conjuntos, anúncios, criativos, prévia, histórico | 21 subcomandos |
+| `insights.py` métricas, `resultado` e `comparar-janelas` | |
+| `targeting.py` cidades, bairros, públicos, `auditar` conjunto | |
+| `saude.py` saldo, reprovados, gasto sem mensagem, recência | |
+| `create.py` subir campanha de captação via WhatsApp | tudo pausado, com trava; a Página do cliente precisa de WhatsApp Business |
+| `tarefas.py` tarefas e reuniões do ClickUp | |
+| `transcrever.py` transcrição local de vídeo ou áudio | precisa do ambiente de transcrição |
 
-Quando o gestor pedir algo que ainda está em construção, dizer isso com clareza e oferecer
-o que já existe. Nunca improvisar chamadas à API por fora dos scripts.
+Ainda não existe: editar conjunto ou anúncio, duplicar, ativar por script. Quando o gestor pedir algo
+que não existe, dizer isso com clareza e oferecer o que já existe. Nunca improvisar chamadas à API por fora dos scripts.
 
 ## Onde ficam as coisas de cada pessoa (nunca dentro da skill)
 
@@ -70,6 +73,48 @@ Regras do cadastro:
   mostrar a lista e pedir a escolha; nunca assumir.
 - Particularidade de um cliente (restrição de procedimento, pedido específico) vai para a
   memória do próprio gestor, não para o cadastro.
+
+## Leitura da conta (`scripts/read.py`)
+
+Tudo aceita `--account act_X` ou `--cliente <nome, #código ou slug>`. Listas vêm só com ACTIVE por padrão
+(`--status ALL` para tudo). Orçamentos vêm em centavos e num campo irmão `_reais`.
+
+| Subcomando | Uso |
+|---|---|
+| `accounts` | contas que a pessoa enxerga |
+| `account-details --cliente X` | status, moeda, saldo, gasto, teto |
+| `campaigns --cliente X [--status ALL]` · `campaign --id` | campanhas |
+| `adsets --cliente X` · `adsets-by-campaign --campaign ID` · `adset --id` · `adsets-by-ids --ids a,b` | conjuntos com targeting |
+| `ads --cliente X` · `ads-by-campaign --campaign ID` · `ads-by-adset --adset ID` · `ad --id` | anúncios com effective_status |
+| `creative --id` · `creatives-by-ad --ad ID` · `preview --creative ID --format all` | criativo e prévia |
+| `images` · `videos --cliente X` | biblioteca de mídia |
+| `activities --cliente X --dias 30 --so-humanas` · `activities-by-adset --adset ID` | histórico de alterações (sem eventos automáticos da Meta) |
+| `custom-audiences` · `lookalike-audiences --cliente X` | públicos |
+
+## Resultados (`scripts/insights.py`)
+
+| Subcomando | Uso |
+|---|---|
+| `resultado --cliente X [--level campaign\|adset\|ad] [--date-preset last_7d] [--limit 50]` | gasto, mensagens iniciadas, custo por mensagem, CTR, CPM, alcance, impressões, frequência, ordenado por gasto, com totais |
+| `comparar-janelas --cliente X [--level ad] [--limit 50]` | 30, 14 e 7 dias lado a lado por objeto: obrigatório antes de propor qualquer pausa |
+| `account --cliente X` · `campaign --id` · `adset --id` · `ad --id` | insights genéricos, padrão last_7d, `--raw` para a resposta crua |
+
+Ao apresentar resultado, sempre dizer o período. Ao propor pausa, mostrar as três janelas do anúncio.
+
+## Segmentação (`scripts/targeting.py`)
+
+`geolocations --q "Cidade"` (chaves de cidade, bairro e região no Brasil), `interests --q`, `interest-suggestions --nomes`,
+`behaviors`, `demographics`, `validate`, `reach`, `delivery` e `describe` (com `--spec`, `--spec-file` ou `--adset`),
+e `auditar --adset ID`, que devolve os alertas da casa: Facebook ou outra plataforma fora do Instagram, raio acima do
+máximo, público sem advantage_audience explícito. A Meta não devolve interesses para termos odontológicos:
+segmentar por localização e público, não por interesse.
+
+## Saúde da conta (`scripts/saude.py`)
+
+`conta --cliente X` ou `todas` (todos os clientes do cadastro com conta). Quatro sinais com ok, atenção ou crítico:
+saldo e pagamento (dias de saldo em conta pré-paga), anúncios reprovados ou com problema, gasto sem mensagem em
+campanhas de mensagem nos últimos 7 dias (e custo por mensagem contra os 7 dias anteriores), e dias desde a última
+alteração humana. É a base de "contas críticas", "dias sem otimização" e "recarga de saldo".
 
 ## Subir campanha (`scripts/create.py`)
 

@@ -199,6 +199,8 @@ def _activity_params(args):
         params["limit"] = min(args.limit, PAGE_SIZE)
     if getattr(args, "after", None):
         params["after"] = args.after
+    if getattr(args, "before", None):
+        params["before"] = args.before
     if args.dias and args.dias > 0:
         params["since"], params["until"] = _janela(args.dias)
     return params

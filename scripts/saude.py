@@ -14,8 +14,8 @@ Subcomandos:
   todas  [--limite-contas N] [--gasto-minimo 15000]     percorre o cadastro local
 
 Só leitura (GET). JSON no stdout; um bloco humano curto por conta no stderr.
-Códigos de saída: 0 análise feita (mesmo com sinal crítico) · 1 conta inacessível
-ou argumento errado · 2 erro interno
+Códigos de saída: 0 análise feita (mesmo com sinal crítico) · 1 conta inacessível,
+argumento errado ou erro interno
 """
 
 import argparse
@@ -23,6 +23,10 @@ import json
 import os
 import sys
 import time
+
+# Campanhas cujo resultado é mensagem no WhatsApp. Tráfego, alcance, seguidores e leads de
+# formulário não entram na regra "gastou e não gerou mensagem".
+OBJETIVOS_DE_MENSAGEM = {"OUTCOME_SALES", "OUTCOME_ENGAGEMENT", "MESSAGES", "CONVERSIONS"}
 from datetime import datetime, timedelta, timezone
 
 for _s in (sys.stdout, sys.stderr):
@@ -314,7 +318,7 @@ def insights_conta(acct, janelas):
 def sinal_gasto(acct, janelas, atual, anterior, erro_conta, gasto_minimo):
     if erro_conta:
         return {"status": "erro", "explicacao": f"não consegui ler os insights da conta ({erro_conta})"}
-    params = {"level": "campaign", "fields": "campaign_id,campaign_name,spend,actions",
+    params = {"level": "campaign", "fields": "campaign_id,campaign_name,objective,spend,actions",
               "time_ranges": _time_ranges(janelas), "limit": PAGINA_INSIGHTS,
               "filtering": json.dumps([{"field": "campaign.effective_status", "operator": "IN", "value": ["ACTIVE"]}])}
     r = _coletar(f"{acct}/insights", params, max_paginas=MAX_PAGINAS_INSIGHTS)
@@ -327,7 +331,8 @@ def sinal_gasto(acct, janelas, atual, anterior, erro_conta, gasto_minimo):
         if not nome_janela:
             continue
         c = por_campanha.setdefault(linha.get("campaign_id"), {
-            "id": linha.get("campaign_id"), "nome": linha.get("campaign_name"),
+            "id": linha.get("campaign_id"), "nome": linha.get("campaign_name"), "objetivo": linha.get("objective"),
+            "mede_mensagem": (linha.get("objective") or "") in OBJETIVOS_DE_MENSAGEM,
             "atual": _janela_vazia(), "anterior": _janela_vazia()})
         c[nome_janela]["gasto"] += _gasto(linha)
         c[nome_janela]["mensagens"] += _mensagens(linha)
@@ -338,12 +343,15 @@ def sinal_gasto(acct, janelas, atual, anterior, erro_conta, gasto_minimo):
         _fechar_janela(c["anterior"])
         c["variacao_custo_pct"] = _variacao_pct(c["anterior"]["custo_por_mensagem"], c["atual"]["custo_por_mensagem"])
         campanhas.append(c)
-        if c["atual"]["gasto"] * 100 > gasto_minimo and c["atual"]["mensagens"] == 0:
+        if c["mede_mensagem"] and c["atual"]["gasto"] * 100 > gasto_minimo and c["atual"]["mensagens"] == 0:
             sem_resultado.append(c)
     campanhas.sort(key=lambda c: -c["atual"]["gasto"])
 
     variacao = _variacao_pct(anterior["custo_por_mensagem"], atual["custo_por_mensagem"])
+    gasto_conversa = round(sum(c["atual"]["gasto"] for c in campanhas if c["mede_mensagem"]), 2)
+    outro_objetivo = [c["nome"] for c in campanhas if not c["mede_mensagem"]]
     out = {"gasto_minimo": _reais(gasto_minimo), "conta_7d": atual, "conta_7d_anteriores": anterior,
+           "gasto_7d_campanhas_de_mensagem": gasto_conversa, "campanhas_outro_objetivo": outro_objetivo,
            "variacao_custo_mensagem_pct": variacao, "campanhas_ativas": len(campanhas),
            "campanhas_sem_resultado": [{"id": c["id"], "nome": c["nome"], "gasto_7d": c["atual"]["gasto"]} for c in sem_resultado],
            "campanhas": campanhas}
@@ -351,8 +359,8 @@ def sinal_gasto(acct, janelas, atual, anterior, erro_conta, gasto_minimo):
     if sem_resultado:
         total = round(sum(c["atual"]["gasto"] for c in sem_resultado), 2)
         return {"status": "critico", "explicacao": f"{len(sem_resultado)} campanha(s) ativa(s) gastaram {_brl(total)} em {JANELA_DIAS} dias sem nenhuma mensagem iniciada", **out}
-    if atual["gasto"] * 100 > gasto_minimo and atual["mensagens"] == 0:
-        return {"status": "critico", "explicacao": f"{_brl(atual['gasto'])} gastos em {JANELA_DIAS} dias sem nenhuma mensagem iniciada na conta", **out}
+    if gasto_conversa * 100 > gasto_minimo and atual["mensagens"] == 0:
+        return {"status": "critico", "explicacao": f"{_brl(gasto_conversa)} gastos em {JANELA_DIAS} dias em campanhas de mensagem sem nenhuma mensagem iniciada", **out}
     if atual["gasto"] <= 0:
         return {"status": "atencao", "explicacao": f"sem gasto nos últimos {JANELA_DIAS} dias: conferir se é intencional", **out}
     if atual["mensagens"] == 0:
