@@ -28,6 +28,9 @@ para pessoas vão no stderr. Erro também vem em JSON, com o campo `hint` dizend
 | `create.py` subir campanha de captação via WhatsApp | tudo pausado, com trava; a Página do cliente precisa de WhatsApp Business |
 | `tarefas.py` tarefas e reuniões do ClickUp | |
 | `transcrever.py` transcrição local de vídeo ou áudio | precisa do ambiente de transcrição |
+| `registro.py` registro de otimização no ClickUp (comenta e conclui a tarefa rotineira) | escreve no ClickUp só com --confirmo |
+| `alertas.py` clientes em alerta (listar), status do projeto e abrir alerta | escreve no ClickUp só com --confirmo |
+| `design.py` e `onboarding.py` acompanhamento do design e do onboarding | só leitura |
 
 Ainda não existe: editar conjunto ou anúncio, duplicar, ativar por script. Quando o gestor pedir algo
 que não existe, dizer isso com clareza e oferecer o que já existe. Nunca improvisar chamadas à API por fora dos scripts.
@@ -36,9 +39,9 @@ que não existe, dizer isso com clareza e oferecer o que já existe. Nunca impro
 
 | Papel | Skills |
 |---|---|
-| Gestor | /meu-dia · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros |
-| Head | /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito (mais as do gestor que leem carteira) |
-| CS | /agendar-reuniao · /resumo-reuniao · /suporte-grupo · /clientes-saudaveis |
+| Gestor | /meu-dia · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao |
+| Head | /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding |
+| CS | /agendar-reuniao · /resumo-reuniao · /suporte-grupo · /clientes-saudaveis · /monitorar-grupo |
 
 Cada uma tem o próprio SKILL.md com os dados que usa (sempre os scripts desta skill) e o formato da entrega.
 O instalador (`instalar.sh` / `instalar.ps1`) liga todas em `~/.claude/skills/`.

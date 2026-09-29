@@ -156,3 +156,104 @@ def buscar(nome):
     alvo = normalizar(nome)
     achados = [t for t in todos if alvo and alvo in normalizar(t.get("name"))]
     return True, achados
+
+
+# ---------------------------------------------------------------------------
+# Listas e escrita (com OK explícito e auditoria)
+# ---------------------------------------------------------------------------
+
+LISTA_ONGOING_ID = "901715565756"
+LISTA_ALERTAS_ID = "901714773481"
+LISTA_CONTEUDOS_ID = "901715515297"
+LISTA_ONBOARDING_ID = "901714636345"
+LISTA_TAREFAS_CLIENTES_ID = "901714773375"
+CAMPO_STATUS_PROJETO_ID = "e3752b91-8c51-45bf-9066-5edfd91e9a2b"
+
+
+def tarefas(list_id, include_closed=False):
+    """Todas as tarefas de uma lista (paginado)."""
+    todas, page = [], 0
+    while True:
+        ok, d = get(f"list/{list_id}/task", include_closed=str(include_closed).lower(), subtasks="true", page=page)
+        if not ok:
+            return False, d
+        todas.extend(d.get("tasks", []))
+        if d.get("last_page", True):
+            break
+        page += 1
+    return True, todas
+
+
+def valor(t, nome):
+    for c in t.get("custom_fields", []):
+        if c.get("name") == nome:
+            return _valor_campo(c)
+    return None
+
+
+def campo_id(list_id, nome):
+    """(id do campo, {nome da opção: id/orderindex}) de um campo personalizado da lista."""
+    ok, d = get(f"list/{list_id}/field")
+    if not ok:
+        return None, {}
+    for f in d.get("fields", []):
+        if f.get("name") == nome:
+            opts = {}
+            for o in f.get("type_config", {}).get("options", []):
+                opts[o.get("name") or o.get("label")] = o.get("id") if f.get("type") == "labels" else o.get("orderindex")
+            return f.get("id"), opts
+    return None, {}
+
+
+def membros():
+    """{nome normalizado: id} dos membros do workspace."""
+    ok, d = get("team")
+    out = {}
+    if ok:
+        for team in d.get("teams", []):
+            if str(team.get("id")) == WORKSPACE_ID:
+                for m in team.get("members", []):
+                    u = m.get("user", {})
+                    out[normalizar(u.get("username"))] = u.get("id")
+    return out
+
+
+def _escrever(metodo, path, payload):
+    import requests
+    url = f"{API}/{path.lstrip('/')}"
+    try:
+        r = requests.request(metodo, url, headers={"Authorization": token(), "Content-Type": "application/json"}, json=payload, timeout=API_TIMEOUT)
+        body = r.json() if r.text else {}
+    except requests.RequestException as e:
+        return False, {"erro": f"sem resposta do ClickUp ({type(e).__name__})"}
+    except ValueError:
+        return False, {"erro": "o ClickUp respondeu algo que não é JSON"}
+    if r.status_code >= 400 or (isinstance(body, dict) and body.get("err")):
+        return False, {"erro": redigir(body.get("err") if isinstance(body, dict) else r.status_code), "code": r.status_code}
+    return True, body
+
+
+def comentar(task_id, texto):
+    return _escrever("POST", f"task/{task_id}/comment", {"comment_text": texto, "notify_all": False})
+
+
+def mudar_status(task_id, status):
+    return _escrever("PUT", f"task/{task_id}", {"status": status})
+
+
+def definir_campo(task_id, field_id, value):
+    return _escrever("POST", f"task/{task_id}/field/{field_id}", {"value": value})
+
+
+def criar_tarefa(list_id, payload):
+    return _escrever("POST", f"list/{list_id}/task", payload)
+
+
+def tempo_em_status(task_id):
+    ok, d = get(f"task/{task_id}/time_in_status")
+    if not ok:
+        return {}
+    out = {}
+    for st in d.get("status_history") or []:
+        out[st.get("status")] = (st.get("total_time") or {}).get("by_minute", 0) / 1440
+    return out
