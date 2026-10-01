@@ -23,6 +23,7 @@ repositório do GitHub da agência. Atualizar é puxar o repositório de novo.
 6. Métricas: mensagens iniciadas, custo por mensagem iniciada, gasto, CTR, CPM, alcance, impressões, frequência.
 7. Segredo (token, senha, chave) nunca entra em nota, memória, print ou chat.
 8. Textos sem travessão.
+9. Roteiro escrito para cliente: no fim, oferecer registrar no ClickUp (/registrar-otimizacao, tarefa "Roteiro").
 
 ## Como pedir
 

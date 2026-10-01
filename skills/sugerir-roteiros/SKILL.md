@@ -17,6 +17,11 @@ resultado esperado, chamada para o WhatsApp), duração sugerida, e "por que est
 e qual objeção ele ataca. Um dos cinco deve ser depoimento ou caso explicado pelo dentista; nenhum pode usar
 rosto de paciente sem termo assinado. Linguagem do paciente final, sem termo técnico sem explicação.
 
+## Depois da entrega
+Ofereça subir a demanda no ClickUp: "Quer que eu registre no ClickUp que os roteiros foram feitos?". Com OK, siga o
+/registrar-otimizacao com a tarefa "Roteiro" (tipo Otimização de Clientes): o comentário diz quantos roteiros foram
+feitos, o tema e o gancho de cada um. Vale também para roteiro escrito fora desta skill.
+
 ## Regras
 - Só procedimentos do cliente (especialidade principal e secundária do cadastro).
 - Sem promessa de resultado, sem preço no roteiro. Sem travessão.

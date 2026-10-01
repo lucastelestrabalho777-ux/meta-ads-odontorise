@@ -2,14 +2,19 @@
 """
 meta-ads-odontorise: registro de otimização no ClickUp (gestor).
 
-Toda mexida na conta de anúncio (otimização, mudança, problema de saldo) é registrada na tarefa
-rotineira do cliente na lista Ongoing: "Acompanhamento de Resultado" para otimizações e mudanças,
-"Monitoramento de Saldo" para saldo. Concluir a tarefa faz a recorrência trazê-la de volta.
+Cada otimização, mudança, anúncio novo ou roteiro vira uma tarefa nova na lista Tarefas - Clientes, no padrão
+do time: nome "Otimização 01/10/26 - CLIENTE [#código]", Tipo de Tarefa, Origem "Gerada Manualmente", cliente
+relacionado, vencimento no dia, só o gestor como responsável, o registro em comentário e a tarefa concluída.
+Saldo fica na tarefa rotineira "Monitoramento de Saldo" da lista Ongoing (lembrete recorrente): comentar e concluir
+faz a recorrência trazê-la de volta.
 
 Subcomandos:
-  preparar --cliente X [--dias 1]        junta o que foi feito na conta (ações humanas no histórico da Meta
-                                         e o que a skill subiu), os números de 7 dias e as tarefas alvo; propõe o texto
-  gravar   --task ID --texto "..." [--concluir] --confirmo     comenta na tarefa e, se pedido, conclui
+  preparar  --cliente X [--dias 1] [--tarefa "Otimização"] [--tipo saldo]
+                                         junta o que foi feito na conta (ações humanas no histórico da Meta
+                                         e o que a skill subiu), os números de 7 dias e a tarefa proposta; propõe o texto
+  registrar --cliente X --tarefa "Otimização" [--tipo-tarefa "Otimização de Clientes"] --texto "..." --confirmo
+                                         cria a tarefa em Tarefas - Clientes, comenta o registro e conclui
+  gravar    --task ID --texto "..." [--concluir] --confirmo     saldo: comenta na tarefa rotineira e, se pedido, conclui
 Sem --confirmo nada é escrito. Cada escrita fica em ~/OdontoRise/meta-ads/auditoria.jsonl.
 """
 
@@ -30,7 +35,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib  # noqa: E402
 from lib import clickup, watchlist  # noqa: E402
 
-ROTINAS = {"otimizacao": "Acompanhamento de Resultado", "saldo": "Monitoramento de Saldo"}
+ROTINAS = {"saldo": "Monitoramento de Saldo"}
+TIPO_PADRAO = "Otimização de Clientes"
+ORIGEM = "Gerada Manualmente"
 
 
 def _falha(msg, acao=None):
@@ -107,9 +114,16 @@ def tarefas_alvo(nome_cliente):
     return out
 
 
-def texto_padrao(c, humanas, skill, nums, tipo):
+def nome_tarefa(c, tarefa):
+    """Padrão do time: 'Otimização 01/10/26 - CLIENTE [#código]'. O gestor não entra no nome: ele é o responsável."""
+    nome = f"{tarefa.strip()} {datetime.now():%d/%m/%y} - {c.get('nome')}"
+    cod = str(c.get("codigo") or "").strip().lstrip("#")
+    return f"{nome} [#{cod}]" if cod else nome
+
+
+def texto_padrao(c, humanas, skill, nums, rotulo):
     hoje = datetime.now().strftime("%d/%m/%Y")
-    linhas = [f"Registro de {'saldo' if tipo == 'saldo' else 'otimização'} · {hoje} · {c.get('nome')} ({c.get('act_id')})", "", "O que foi feito:"]
+    linhas = [f"Registro de {rotulo.lower()} · {hoje} · {c.get('nome')} ({c.get('act_id')})", "", "O que foi feito:"]
     itens = [f"- {a['quando']} {a['o_que']}: {a.get('objeto') or ''}".rstrip(": ") for a in humanas[:12]]
     itens += [f"- {a['quando']} {a['o_que']}: {a['resumo']}" for a in skill[:8]]
     linhas += itens or ["- (descrever a mexida)"]
@@ -126,13 +140,64 @@ def cmd_preparar(a):
     humanas = acoes_humanas(act, a.dias) if act else []
     skill = acoes_da_skill(act, a.dias) if act else []
     nums = numeros_7d(act) if act else {}
-    alvos = tarefas_alvo(c.get("nome"))
-    tipo = "saldo" if a.tipo == "saldo" else "otimizacao"
-    lib.print_json({"ok": True, "cliente": c.get("nome"), "conta": act, "dias": a.dias,
-                    "acoes_humanas_na_conta": humanas, "acoes_da_skill": skill, "numeros_7d": nums,
-                    "tarefas_alvo": alvos, "tarefa_sugerida": alvos.get(tipo),
-                    "texto_proposto": texto_padrao(c, humanas, skill, nums, tipo),
+    out = {"ok": True, "cliente": c.get("nome"), "conta": act, "dias": a.dias,
+           "acoes_humanas_na_conta": humanas, "acoes_da_skill": skill, "numeros_7d": nums}
+    if a.tipo == "saldo":
+        out.update({"tarefa_sugerida": tarefas_alvo(c.get("nome")).get("saldo"),
+                    "texto_proposto": texto_padrao(c, humanas, skill, nums, "saldo"),
                     "proximo_passo": "ajustar o texto com o gestor e, com OK, gravar --task <id> --texto '...' --concluir --confirmo"})
+    else:
+        out.update({"tarefa_proposta": {"lista": "Tarefas - Clientes", "nome": nome_tarefa(c, a.tarefa), "tipo_de_tarefa": a.tipo_tarefa,
+                                        "origem": ORIGEM, "cliente": c.get("nome"), "vencimento": datetime.now().date().isoformat(),
+                                        "responsavel": "o gestor (dono do token do ClickUp)", "status_final": "complete"},
+                    "texto_proposto": texto_padrao(c, humanas, skill, nums, a.tarefa),
+                    "proximo_passo": "ajustar nome, tipo e texto com o gestor e, com OK, registrar --cliente X --tarefa '...' --tipo-tarefa '...' --texto '...' --confirmo"})
+    lib.print_json(out)
+
+
+def cmd_registrar(a):
+    c = _cliente(a.cliente)
+    if not c.get("clickup_task_id"):
+        _falha(f"{c.get('nome')} está no cadastro sem a tarefa de perfil do ClickUp", "cadastrar de novo com: clientes.py cadastrar --nome ...")
+    lista = clickup.LISTA_TAREFAS_CLIENTES_ID
+    ftipo, tipos = clickup.campo_id(lista, "Tipo de Tarefa")
+    if a.tipo_tarefa not in tipos:
+        _falha(f"tipo de tarefa '{a.tipo_tarefa}' não existe", f"opções: {list(tipos)}")
+    forigem, origens = clickup.campo_id(lista, "Origem")
+    fcliente, _ = clickup.campo_id(lista, "Tarefas - Clientes")
+    if not fcliente:
+        _falha("campo 'Tarefas - Clientes' (cliente relacionado) não encontrado na lista")
+    uid, quem = clickup.quem_sou()
+    if not uid:
+        _falha("não consegui identificar o dono do token do ClickUp", "conferir o token (passo 8 do guia)")
+    venc = datetime.now().replace(hour=12, minute=0, second=0, microsecond=0)
+    nome = nome_tarefa(c, a.tarefa)
+    payload = {"name": nome, "assignees": [uid], "due_date": int(venc.timestamp() * 1000), "due_date_time": False,
+               "custom_fields": [{"id": ftipo, "value": tipos[a.tipo_tarefa]}, {"id": fcliente, "value": {"add": [c["clickup_task_id"]]}}]
+               + ([{"id": forigem, "value": origens[ORIGEM]}] if ORIGEM in origens else [])}
+    plano = {"lista": "Tarefas - Clientes", "nome": nome, "tipo_de_tarefa": a.tipo_tarefa, "origem": ORIGEM, "cliente": c.get("nome"),
+             "vencimento": venc.date().isoformat(), "responsavel": quem, "comentario": a.texto, "status_final": "complete"}
+    if not a.confirmo:
+        lib.print_json({"ok": False, "ensaio": True, "faria": plano, "acao": "nada foi criado. Depois do OK do gestor, repetir com --confirmo"})
+        sys.exit(1)
+    ok, t = clickup.criar_tarefa(lista, payload)
+    if not ok:
+        _falha(f"o ClickUp recusou criar a tarefa ({t.get('erro')})")
+    lib.auditar("criar tarefa", "clickup", f"{nome}: {a.tipo_tarefa}", ids={"task": t.get("id")}, quem=quem)
+    out = {"ok": True, "tarefa": nome, "task": t.get("id"), "url": t.get("url")}
+    ok, r = clickup.comentar(t["id"], a.texto)
+    if not ok:
+        out["aviso"] = f"tarefa criada, mas o ClickUp recusou o comentário ({r.get('erro')}); ela ficou aberta"
+        lib.print_json(out)
+        return
+    lib.auditar("comentar tarefa", "clickup", f"{nome}: {a.texto[:120]}", ids={"task": t["id"], "comment": r.get("id")}, quem=quem)
+    ok, r = clickup.mudar_status(t["id"], "complete")
+    if ok:
+        lib.auditar("concluir tarefa", "clickup", nome, ids={"task": t["id"]}, quem=quem)
+        out["status"] = "complete"
+    else:
+        out["aviso"] = f"tarefa criada e comentada, mas não consegui concluir ({r.get('erro')})"
+    lib.print_json(out)
 
 
 def cmd_gravar(a):
@@ -165,7 +230,8 @@ def cmd_gravar(a):
 def main():
     p = argparse.ArgumentParser(description="Registro de otimização no ClickUp")
     sub = p.add_subparsers(dest="cmd", required=True)
-    s = sub.add_parser("preparar"); s.add_argument("--cliente", required=True); s.add_argument("--dias", type=int, default=1); s.add_argument("--tipo", choices=["otimizacao", "saldo"], default="otimizacao"); s.set_defaults(fn=cmd_preparar)
+    s = sub.add_parser("preparar"); s.add_argument("--cliente", required=True); s.add_argument("--dias", type=int, default=1); s.add_argument("--tipo", choices=["otimizacao", "saldo"], default="otimizacao"); s.add_argument("--tarefa", default="Otimização"); s.add_argument("--tipo-tarefa", default=TIPO_PADRAO); s.set_defaults(fn=cmd_preparar)
+    s = sub.add_parser("registrar"); s.add_argument("--cliente", required=True); s.add_argument("--tarefa", required=True); s.add_argument("--tipo-tarefa", default=TIPO_PADRAO); s.add_argument("--texto", required=True); s.add_argument("--confirmo", action="store_true"); s.set_defaults(fn=cmd_registrar)
     s = sub.add_parser("gravar"); s.add_argument("--task", required=True); s.add_argument("--texto", required=True); s.add_argument("--concluir", action="store_true"); s.add_argument("--confirmo", action="store_true"); s.set_defaults(fn=cmd_gravar)
     a = p.parse_args()
     try:
