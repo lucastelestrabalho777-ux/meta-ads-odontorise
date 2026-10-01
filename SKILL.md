@@ -25,10 +25,11 @@ para pessoas vão no stderr. Erro também vem em JSON, com o campo `hint` dizend
 | `insights.py` métricas, `resultado` e `comparar-janelas` | |
 | `targeting.py` cidades, bairros, públicos, `auditar` conjunto | |
 | `saude.py` saldo, reprovados, gasto sem mensagem, recência | |
-| `create.py` subir campanha de captação via WhatsApp | tudo pausado, com trava; a Página do cliente precisa de WhatsApp Business |
+| `create.py` subir campanha de captação via WhatsApp; `anuncio-drive` sobe vídeo ou imagem do Google Drive num conjunto que já existe | tudo pausado, com trava; a Página do cliente precisa de WhatsApp Business |
+| `drive.py` lista pasta ou arquivo do Google Drive pelo link público | só leitura, sem baixar |
 | `tarefas.py` tarefas e reuniões do ClickUp | |
 | `transcrever.py` transcrição local de vídeo ou áudio | precisa do ambiente de transcrição |
-| `registro.py` registro de otimização no ClickUp (comenta e conclui a tarefa rotineira) | escreve no ClickUp só com --confirmo |
+| `registro.py` registro de otimização e roteiro no ClickUp (cria a tarefa em Tarefas - Clientes; saldo comenta a tarefa rotineira) | escreve no ClickUp só com --confirmo |
 | `alertas.py` clientes em alerta (listar), status do projeto e abrir alerta | escreve no ClickUp só com --confirmo |
 | `design.py` e `onboarding.py` acompanhamento do design e do onboarding | só leitura |
 
@@ -39,7 +40,7 @@ que não existe, dizer isso com clareza e oferecer o que já existe. Nunca impro
 
 | Papel | Skills |
 |---|---|
-| Gestor | /meu-dia · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao |
+| Gestor | /meu-dia · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive |
 | Head | /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding |
 | CS | /agendar-reuniao · /resumo-reuniao · /suporte-grupo · /clientes-saudaveis · /monitorar-grupo |
 
@@ -142,13 +143,22 @@ Cria campanha, conjunto, criativo a partir de um post do Instagram e anúncio no
 5. Nunca ativa. Ativar é o gestor, no Gerenciador ou por pedido explícito depois.
 Guardas no código: recusa Facebook, Audience Network e Messenger; recusa raio acima do maior raio que a conta já usa
 (ou 10 km se a conta não usa raio); exige público explícito (advantage_audience 0 ou 1); recusa carrossel com mais de 10 cartões. Toda escrita fica em `~/OdontoRise/meta-ads/auditoria.jsonl`.
-Subcomandos: `campanha`, `conjunto`, `criativo-post`, `anuncio`, `captacao` (fluxo completo).
+Subcomandos: `campanha`, `conjunto`, `criativo-post`, `anuncio`, `captacao` (fluxo completo) e `anuncio-drive`.
+`anuncio-drive`: vídeo ou imagem do Google Drive vira anúncio PAUSED num conjunto que já existe (skill /subir-criativos-drive).
+A Meta busca o vídeo direto no Drive pelo link, nada é baixado no computador; o link precisa estar como "Qualquer pessoa
+com o link". Página, Instagram, botão, título, boas-vindas e UTMs vêm do anúncio ativo mais recente do conjunto.
 Pré-requisito da conta do cliente: a Página precisa ter um WhatsApp Business conectado; com número pessoal a Meta recusa o conjunto.
 
 ## Tarefas do ClickUp (`scripts/tarefas.py`)
 
 `minhas --dias 7` (atrasadas, hoje, próximas, sem data), `tarefa --id X` (descrição, subtarefas, comentários),
 `reunioes --dias 14` (reuniões com clientes marcadas). Só leitura. É a base da skill /meu-dia.
+
+## Registro no ClickUp (`scripts/registro.py`)
+
+Otimização, anúncio novo e roteiro feitos para um cliente viram uma tarefa concluída em Tarefas - Clientes, ligada ao
+cliente (skill /registrar-otimizacao). Sempre que o Claude escrever roteiro para um cliente, em qualquer conversa,
+oferecer no fim: "Quer que eu registre no ClickUp que o roteiro foi feito?". Registrar só com OK.
 
 ## Regras da casa (valem em toda operação)
 

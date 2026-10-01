@@ -14,14 +14,20 @@ Subcomandos:
                  (--welcome-from-creative ID | --welcome-json '{...}')
   anuncio        --cliente/--account --conjunto ID --criativo ID --nome "..."
   captacao       fluxo completo (campanha + conjunto + criativo de post + anúncio) com os mesmos argumentos
+  anuncio-drive  --cliente/--account --conjunto ID --arquivo LINK_OU_ID --nome "..." --legenda "..." [--modelo ID_ANUNCIO]
+                 vídeo ou imagem do Google Drive vira anúncio PAUSED num conjunto que já existe. A Meta busca o vídeo
+                 direto no Drive (nada é baixado no computador). Página, Instagram, botão, boas-vindas, título e UTMs
+                 vêm do anúncio modelo (o ativo mais recente do conjunto, ou --modelo)
 
 Padrão da casa: references/padroes-campanha.md. Regras: references/regras-da-casa.md.
 """
 
 import argparse
+import base64
 import json
 import os
 import sys
+import time
 from datetime import date
 
 for _s in (sys.stdout, sys.stderr):
@@ -32,6 +38,7 @@ for _s in (sys.stdout, sys.stderr):
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib  # noqa: E402
+from lib import drive  # noqa: E402
 
 PLATAFORMAS_PROIBIDAS = {"facebook", "audience_network", "messenger"}
 POSICOES_IG = ["stream", "story", "reels", "explore", "explore_home"]
@@ -182,6 +189,127 @@ def payload_anuncio(a, conjunto_id, criativo_id):
 
 
 # ---------------------------------------------------------------------------
+# Anúncio a partir do Google Drive (conjunto que já existe)
+# ---------------------------------------------------------------------------
+
+CAMPOS_CRIATIVO_MODELO = "id,name,instagram_user_id,object_story_spec,url_tags"
+ESPERA_VIDEO_S = 900
+
+
+def conjunto_destino(acct, conjunto_id):
+    """Conjunto existente, desta conta e só de Instagram (regra 4 da casa)."""
+    ok, s = lib.graph_get(conjunto_id, params={"fields": "id,name,account_id,effective_status,promoted_object,targeting{publisher_platforms},campaign{name}"})
+    if not ok:
+        _falha(f"não consegui ler o conjunto {conjunto_id} ({s.get('erro')})", {"acao": "conferir o id com read.py adsets --cliente X"})
+    if f"act_{s.get('account_id')}" != acct:
+        _falha(f"o conjunto {conjunto_id} não é da conta {acct}")
+    plats = set((s.get("targeting") or {}).get("publisher_platforms") or [])
+    if not plats or plats & PLATAFORMAS_PROIBIDAS:
+        _falha(f"o conjunto '{s.get('name')}' entrega em {sorted(plats) or 'posicionamento automático'}. A casa sobe anúncio só em conjunto de Instagram.")
+    return s
+
+
+def anuncio_modelo(conjunto_id, modelo_id=None):
+    """Anúncio que serve de molde: o --modelo, ou o ativo mais recente do conjunto."""
+    if modelo_id:
+        ok, ad = lib.graph_get(modelo_id, params={"fields": f"id,name,effective_status,creative{{{CAMPOS_CRIATIVO_MODELO}}}"})
+        if not ok:
+            _falha(f"não consegui ler o anúncio modelo {modelo_id} ({ad.get('erro')})")
+        return ad
+    ok, d = lib.graph_get(f"{conjunto_id}/ads", params={"fields": f"id,name,effective_status,created_time,creative{{{CAMPOS_CRIATIVO_MODELO}}}", "limit": 50})
+    ads = d.get("data", []) if ok else []
+    if not ads:
+        _falha("o conjunto não tem anúncio para servir de modelo", {"acao": "informar --modelo <id de um anúncio ativo da mesma conta>"})
+    ads.sort(key=lambda x: (x.get("effective_status") == "ACTIVE", x.get("created_time", "")), reverse=True)
+    return ads[0]
+
+
+def molde_do_modelo(ad):
+    """Página, Instagram, botão, boas-vindas, título e UTMs do criativo modelo."""
+    cr = ad.get("creative") or {}
+    oss = cr.get("object_story_spec") or {}
+    dados = oss.get("video_data") or oss.get("link_data") or {}
+    ig = cr.get("instagram_user_id") or oss.get("instagram_user_id")
+    if not ig:
+        _falha(f"o anúncio modelo '{ad.get('name')}' não tem perfil do Instagram", {"acao": "informar --modelo <id de outro anúncio ativo>"})
+    w = dados.get("page_welcome_message")
+    if not w:
+        ok, d = lib.graph_get(cr.get("id"), params={"fields": "page_welcome_message"})
+        w = d.get("page_welcome_message") if ok else None
+    return {"anuncio": ad.get("name"), "anuncio_id": ad.get("id"), "page_id": oss.get("page_id"), "instagram_user_id": ig,
+            "call_to_action": dados.get("call_to_action") or CTA_WHATSAPP, "page_welcome_message": w,
+            "titulo": dados.get("title") or dados.get("name"), "url_tags": cr.get("url_tags")}
+
+
+def arquivo_drive(link):
+    _, fid = drive.extrair_id(link)
+    if not fid:
+        _falha("não reconheci o link do arquivo no Drive", {"acao": "drive.py listar --link <pasta> e usar o id de cada arquivo"})
+    ok, arq = drive.conferir_arquivo(fid)
+    if not ok:
+        _falha(arq.get("erro"), {"acao": arq.get("acao")})
+    if arq["tipo"] not in ("video", "imagem"):
+        _falha(f"'{arq['nome']}' não é vídeo nem imagem (jpg ou png)")
+    return arq
+
+
+def payload_criativo_drive(a, arq, molde, midia):
+    dados = {"message": a.legenda, "call_to_action": molde["call_to_action"]}
+    if molde.get("page_welcome_message"):
+        dados["page_welcome_message"] = molde["page_welcome_message"]
+    spec = {"page_id": molde["page_id"], "instagram_user_id": molde["instagram_user_id"]}
+    if arq["tipo"] == "video":
+        dados.update({"video_id": midia.get("video_id"), "image_url": midia.get("capa")})
+        if molde.get("titulo"):
+            dados["title"] = molde["titulo"]
+        spec["video_data"] = dados
+    else:
+        dados.update({"image_hash": midia.get("hash"), "link": CTA_WHATSAPP["value"]["link"]})
+        if molde.get("titulo"):
+            dados["name"] = molde["titulo"]
+        spec["link_data"] = dados
+    p = {"name": a.nome, "object_story_spec": spec,
+         "degrees_of_freedom_spec": {"creative_features_spec": {r: {"enroll_status": "OPT_OUT"} for r in RECURSOS_OPT_OUT}}}
+    if molde.get("url_tags"):
+        p["url_tags"] = molde["url_tags"]
+    return p
+
+
+def subir_video(acct, arq, quem):
+    """A Meta busca o vídeo no Drive pelo link (file_url) e processa. Devolve {video_id, capa}."""
+    ok, d = lib.graph_post(f"{acct}/advideos", data={"file_url": arq["link_direto"], "name": arq["nome"]}, timeout=300)
+    if not ok:
+        _falha(f"a Meta não conseguiu buscar o vídeo no Drive: {d.get('erro')}", {"code": d.get("code"), "acao": drive.COMO_LIBERAR})
+    vid = d.get("id")
+    lib.auditar("subir vídeo do Drive", acct, f"{arq['nome']} ({arq['tamanho_mb']} MB)", ids={"video": vid, "drive": arq["id"]}, quem=quem)
+    fim = time.time() + ESPERA_VIDEO_S
+    while time.time() < fim:
+        ok, v = lib.graph_get(vid, params={"fields": "status,thumbnails{uri,is_preferred}"})
+        st = (v.get("status") or {}).get("video_status") if ok else None
+        capas = (v.get("thumbnails") or {}).get("data", []) if ok else []
+        if st == "error":
+            _falha(f"a Meta recusou o vídeo '{arq['nome']}' ao processar", {"video_id": vid, "status": v.get("status")})
+        if st == "ready" and capas:
+            capa = next((c for c in capas if c.get("is_preferred")), capas[0])
+            return {"video_id": vid, "capa": capa.get("uri")}
+        time.sleep(10)
+    _falha(f"o vídeo subiu, mas a Meta não terminou de processar em {ESPERA_VIDEO_S // 60} minutos", {"video_id": vid, "acao": "conferir na biblioteca de mídia da conta antes de tentar de novo"})
+
+
+def subir_imagem(acct, arq, quem):
+    """Imagem passa só pela memória (a Meta não aceita link de imagem). Devolve {hash}."""
+    ok, conteudo = drive.imagem_em_memoria(arq["id"])
+    if not ok:
+        _falha(conteudo.get("erro"), {"acao": conteudo.get("acao")})
+    ok, d = lib.graph_post(f"{acct}/adimages", data={"bytes": base64.b64encode(conteudo).decode(), "name": arq["nome"]}, timeout=120)
+    if not ok:
+        _falha(f"a Meta recusou a imagem: {d.get('erro')}", {"code": d.get("code")})
+    img = next(iter((d.get("images") or {}).values()), {})
+    lib.auditar("subir imagem do Drive", acct, f"{arq['nome']} ({arq['tamanho_mb']} MB)", ids={"hash": img.get("hash"), "drive": arq["id"]}, quem=quem)
+    return {"hash": img.get("hash")}
+
+
+# ---------------------------------------------------------------------------
 # Subcomandos
 # ---------------------------------------------------------------------------
 
@@ -272,6 +400,39 @@ def cmd_captacao(a):
                     "proximo_passo": f"validar: read.py ad --id {ad['id']}; read.py preview --creative {cr['id']} --format all; targeting.py auditar --adset {adset['id']}"})
 
 
+@lib.handle_fb_error
+def cmd_anuncio_drive(a):
+    lib.init_api(quiet=True)
+    acct = lib.resolve_target(a)
+    conj = conjunto_destino(acct, a.conjunto)
+    molde = molde_do_modelo(anuncio_modelo(a.conjunto, a.modelo))
+    molde["page_id"] = molde["page_id"] or (conj.get("promoted_object") or {}).get("page_id")
+    if not molde["page_id"]:
+        _falha("não achei a Página do cliente no anúncio modelo nem no conjunto", {"acao": "informar --modelo <id de outro anúncio ativo>"})
+    arq = arquivo_drive(a.arquivo)
+    if not a.confirmo:
+        midia = {"video_id": "<id do vídeo depois do envio>", "capa": "<capa gerada pela Meta>", "hash": "<hash da imagem depois do envio>"}
+        lib.print_json({"ok": False, "ensaio": True,
+                        "resumo": {"arquivo": arq["nome"], "tipo": arq["tipo"], "tamanho_mb": arq["tamanho_mb"],
+                                   "campanha": (conj.get("campaign") or {}).get("name"), "conjunto": conj.get("name"),
+                                   "anuncio_modelo": molde["anuncio"], "nome_do_anuncio": a.nome, "legenda": a.legenda,
+                                   "titulo": molde.get("titulo"), "boas_vindas_copiadas": bool(molde.get("page_welcome_message")),
+                                   "utms_copiadas": bool(molde.get("url_tags")), "status": "PAUSED"},
+                        "enviaria": {"criativo": payload_criativo_drive(a, arq, molde, midia), "anuncio": payload_anuncio(a, a.conjunto, "<id do criativo>")},
+                        "aviso": None if molde.get("page_welcome_message") else "o anúncio modelo não tem boas-vindas: o novo também não terá",
+                        "acao": "nada foi enviado. Depois do OK do gestor, repetir com --confirmo"})
+        sys.exit(1)
+    quem = _quem()
+    midia = subir_video(acct, arq, quem) if arq["tipo"] == "video" else subir_imagem(acct, arq, quem)
+    pcr = payload_criativo_drive(a, arq, molde, midia)
+    cr = _post(acct, "adcreatives", pcr, "criar criativo", f"{a.nome} (Drive {arq['nome']})", quem)
+    lib.safe_delay(1)
+    ad = _post(acct, "ads", payload_anuncio(a, a.conjunto, cr["id"]), "criar anúncio", a.nome, quem)
+    lib.print_json({"ok": True, "conta": acct, "conjunto": conj.get("name"), "anuncio_id": ad["id"], "criativo_id": cr["id"],
+                    "midia": midia, "nome": a.nome, "status": "PAUSED",
+                    "proximo_passo": f"validar: read.py ad --id {ad['id']} e read.py preview --creative {cr['id']} --format all"})
+
+
 def main():
     p = argparse.ArgumentParser(description="Subir campanha de captação via WhatsApp (tudo pausado)")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -297,6 +458,8 @@ def main():
     s = sub.add_parser("criativo-post"); comum(s); s.add_argument("--nome", required=True); args_criativo(s); s.set_defaults(fn=cmd_criativo_post)
     s = sub.add_parser("anuncio"); comum(s); s.add_argument("--conjunto", required=True); s.add_argument("--criativo", required=True); s.add_argument("--nome", required=True); s.set_defaults(fn=cmd_anuncio)
     s = sub.add_parser("captacao"); comum(s); s.add_argument("--data"); s.add_argument("--sufixo"); args_conjunto(s); args_criativo(s); s.set_defaults(fn=cmd_captacao)
+    s = sub.add_parser("anuncio-drive"); comum(s); s.add_argument("--conjunto", required=True); s.add_argument("--arquivo", required=True, help="link ou id do arquivo no Drive")
+    s.add_argument("--nome", required=True); s.add_argument("--legenda", required=True); s.add_argument("--modelo", help="id do anúncio que serve de molde"); s.set_defaults(fn=cmd_anuncio_drive)
     a = p.parse_args()
     a.fn(a)
 

@@ -322,7 +322,7 @@ def graph_get(path, params=None, token=None):
     return True, body
 
 
-def graph_post(path, data=None, token=None):
+def graph_post(path, data=None, token=None, timeout=API_TIMEOUT):
     """
     POST na Graph API (escrita). Token no cabeçalho, appsecret_proof quando houver chave.
     Devolve (ok, dado) sem levantar exceção de rede e sem segredo na mensagem.
@@ -340,7 +340,7 @@ def graph_post(path, data=None, token=None):
             data[k] = json.dumps(v, ensure_ascii=False)
     url = path if path.startswith("http") else f"{GRAPH_URL}/{path.lstrip('/')}"
     try:
-        r = requests.post(url, data=data, headers={"Authorization": f"Bearer {token}"}, timeout=API_TIMEOUT)
+        r = requests.post(url, data=data, headers={"Authorization": f"Bearer {token}"}, timeout=timeout)
         body = r.json()
     except requests.RequestException as e:
         return False, {"erro": f"sem resposta da Meta ({type(e).__name__})", "code": None, "rede": True}
