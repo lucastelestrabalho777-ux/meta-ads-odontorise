@@ -50,7 +50,6 @@ PAIS_PADRAO = "BR"
 OBJETIVO_PADRAO = "CONVERSATIONS"      # campanhas de mensagem no WhatsApp
 RAIO_MAXIMO_KM = 10.0
 MILHA_EM_KM = 1.609344
-PLATAFORMAS_FORA_DA_CASA = ("facebook", "audience_network", "messenger")
 TIPO_GEO = {"custom_locations": "ponto no mapa", "cities": "cidade", "places": "lugar"}
 CHAVES_GEO = ("countries", "regions", "cities", "zips", "neighborhoods", "subcities",
               "geo_markets", "places", "custom_locations")
@@ -395,14 +394,6 @@ def _resumo_targeting(t):
 def _alertas_da_casa(t, raio_maximo):
     """Alertas (fogem da regra) e avisos (merecem olhar) sobre o targeting."""
     alertas, avisos = [], []
-    plat = t.get("publisher_platforms")
-    if not plat:
-        alertas.append("Posicionamentos automáticos (publisher_platforms ausente): a entrega inclui Facebook, "
-                       "Audience Network e Messenger. A casa entrega só no Instagram.")
-    else:
-        fora = [p for p in plat if p in PLATAFORMAS_FORA_DA_CASA]
-        if fora:
-            alertas.append(f"Entrega ligada em {', '.join(fora)} (publisher_platforms). A casa entrega só no Instagram.")
     raios = _raios(t.get("geo_locations"))
     for r in raios:
         if r["raio_km"] > raio_maximo:

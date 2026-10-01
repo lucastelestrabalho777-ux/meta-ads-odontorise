@@ -40,7 +40,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib  # noqa: E402
 from lib import drive  # noqa: E402
 
-PLATAFORMAS_PROIBIDAS = {"facebook", "audience_network", "messenger"}
 POSICOES_IG = ["stream", "story", "reels", "explore", "explore_home"]
 RECURSOS_OPT_OUT = ["advantage_plus_creative", "image_touchups", "carousel_to_video", "text_optimizations",
                     "inline_comment", "image_brightness_and_contrast", "enhance_cta", "image_templates",
@@ -105,6 +104,14 @@ def raio_em_uso(acct):
     return maior or None
 
 
+def plataformas_em_uso(acct):
+    """Combinações de posicionamento dos conjuntos ativos da conta (vazia = automático). A casa segue o que a conta já usa."""
+    ok, d = lib.graph_get(f"{acct}/adsets", params={"fields": "targeting{publisher_platforms}", "effective_status": json.dumps(["ACTIVE"]), "limit": 100})
+    if not ok:
+        return None
+    return {tuple(sorted((s.get("targeting") or {}).get("publisher_platforms") or [])) for s in d.get("data", [])}
+
+
 def checar_targeting(t, raio_maximo, acct=None):
     """Aplica as guardas da casa ao targeting. Devolve (targeting ajustado, avisos)."""
     avisos = []
@@ -115,14 +122,16 @@ def checar_targeting(t, raio_maximo, acct=None):
             avisos.append(f"conta sem raio em uso: teto de {RAIO_PADRAO_KM:g} km")
         else:
             avisos.append(f"teto de raio = {raio_maximo:g} km, o maior que a conta já usa")
-    plats = set(t.get("publisher_platforms") or [])
-    proibidas = plats & PLATAFORMAS_PROIBIDAS
-    if proibidas:
-        _falha(f"targeting inclui posicionamento proibido pela casa: {sorted(proibidas)}. Só Instagram.")
-    if not plats:
-        t["publisher_platforms"] = ["instagram"]
-        avisos.append("publisher_platforms ausente: definido como só Instagram")
-    if "instagram_positions" not in t:
+    if not t.get("publisher_platforms"):
+        em_uso = plataformas_em_uso(acct) if acct else None
+        if not em_uso or len(em_uso) > 1:
+            _falha("targeting sem publisher_platforms: informe onde o conjunto entrega, seguindo o que a conta já usa",
+                   {"em_uso_na_conta": [list(p) or "automático" for p in sorted(em_uso or [])]})
+        unica = next(iter(em_uso))
+        if unica:
+            t["publisher_platforms"] = list(unica)
+        avisos.append(f"publisher_platforms ausente: {', '.join(unica) or 'automático'}, o mesmo dos conjuntos ativos da conta")
+    if "instagram" in (t.get("publisher_platforms") or []) and "instagram_positions" not in t:
         t["instagram_positions"] = list(POSICOES_IG)
         avisos.append("instagram_positions ausente: feed, stories, reels, explore")
     pos = t.get("instagram_positions") or []
@@ -197,15 +206,12 @@ ESPERA_VIDEO_S = 900
 
 
 def conjunto_destino(acct, conjunto_id):
-    """Conjunto existente, desta conta e só de Instagram (regra 4 da casa)."""
+    """Conjunto existente e desta conta. O posicionamento é o que o gestor escolheu: a skill não muda."""
     ok, s = lib.graph_get(conjunto_id, params={"fields": "id,name,account_id,effective_status,promoted_object,targeting{publisher_platforms},campaign{name}"})
     if not ok:
         _falha(f"não consegui ler o conjunto {conjunto_id} ({s.get('erro')})", {"acao": "conferir o id com read.py adsets --cliente X"})
     if f"act_{s.get('account_id')}" != acct:
         _falha(f"o conjunto {conjunto_id} não é da conta {acct}")
-    plats = set((s.get("targeting") or {}).get("publisher_platforms") or [])
-    if not plats or plats & PLATAFORMAS_PROIBIDAS:
-        _falha(f"o conjunto '{s.get('name')}' entrega em {sorted(plats) or 'posicionamento automático'}. A casa sobe anúncio só em conjunto de Instagram.")
     return s
 
 
@@ -415,6 +421,7 @@ def cmd_anuncio_drive(a):
         lib.print_json({"ok": False, "ensaio": True,
                         "resumo": {"arquivo": arq["nome"], "tipo": arq["tipo"], "tamanho_mb": arq["tamanho_mb"],
                                    "campanha": (conj.get("campaign") or {}).get("name"), "conjunto": conj.get("name"),
+                                   "posicionamentos": (conj.get("targeting") or {}).get("publisher_platforms") or "automático",
                                    "anuncio_modelo": molde["anuncio"], "nome_do_anuncio": a.nome, "legenda": a.legenda,
                                    "titulo": molde.get("titulo"), "boas_vindas_copiadas": bool(molde.get("page_welcome_message")),
                                    "utms_copiadas": bool(molde.get("url_tags")), "status": "PAUSED"},

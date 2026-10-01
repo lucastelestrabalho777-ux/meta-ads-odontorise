@@ -8,8 +8,8 @@ Valem em toda operação, em qualquer conta, para qualquer papel. Não são suge
    do gestor, depois de conferir preview e auditoria do conjunto.
 3. **Antes de pausar, cruzar 30, 14 e 7 dias por anúncio.** Um anúncio só sai quando está ruim nas três
    janelas. Nunca decidir por uma janela só.
-4. **Nunca sugerir posicionamento no Facebook nem ampliar raio de localização.** Escala vem de criativo,
-   verba e público.
+4. **Nunca ampliar raio de localização.** Escala vem de criativo, verba e público. Posicionamento (Instagram,
+   Facebook) segue o que a conta do cliente já usa: não incluir nem tirar plataforma sem entender o que está rodando.
 5. **Post do Instagram do cliente passa por análise antes de virar anúncio.** O Claude lê o conteúdo e
    classifica: fala com o paciente final, sobe; mentoria, conteúdo pessoal ou sem sentido para captação,
    não sobe e o gestor é avisado.

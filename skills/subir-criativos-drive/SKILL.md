@@ -19,7 +19,7 @@ Página, Instagram, botão de WhatsApp, título, boas-vindas e UTMs copiados do 
    legendas dos anúncios ativos da conta (`read.py creative --id`).
 4. Rode o ensaio de cada arquivo:
    `scripts/create.py anuncio-drive --cliente X --conjunto ID --arquivo "<link ou id>" --nome "..." --legenda "..."`.
-   Mostre uma tabela: arquivo · tipo · tamanho · campanha · conjunto · anúncio modelo · nome · começo da legenda ·
+   Mostre uma tabela: arquivo · tipo · tamanho · campanha · conjunto · onde entrega · anúncio modelo · nome · começo da legenda ·
    boas-vindas copiadas · PAUSADO. Se vier `aviso`, mostre.
 5. Só com OK explícito, repita cada um com `--confirmo`, um arquivo por vez. Vídeo leva de 1 a 5 minutos (a Meta busca no
    Drive e processa).
@@ -29,7 +29,7 @@ Página, Instagram, botão de WhatsApp, título, boas-vindas e UTMs copiados do 
 
 ## Regras
 - Tudo nasce PAUSADO. Ativar é decisão do gestor.
-- Só conjunto que já existe e só de Instagram: o script recusa conjunto com Facebook ou posicionamento automático.
+- Só conjunto que já existe. O posicionamento é o do conjunto (o ensaio mostra onde ele entrega); a skill não muda.
 - Nunca baixar o vídeo no computador para subir. Drive restrito: pedir para liberar o link.
 - Rosto de paciente só com termo assinado. Antes e depois explícito tem risco de reprovação na Meta: avisar o gestor.
 - Sem travessão.

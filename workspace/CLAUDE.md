@@ -18,7 +18,7 @@ repositório do GitHub da agência. Atualizar é puxar o repositório de novo.
 1. Nada é executado em conta de anúncio, ClickUp ou grupo de cliente sem OK explícito, item por item.
 2. Campanha, conjunto e anúncio nascem pausados. Ativar é decisão do gestor.
 3. Antes de pausar um anúncio, cruzar 30, 14 e 7 dias.
-4. Nunca sugerir Facebook como posicionamento nem ampliar raio.
+4. Nunca ampliar raio. Posicionamento segue o que a conta já usa (Instagram, Facebook).
 5. Post do cliente só vira anúncio depois de analisado: paciente final sobe; mentoria, conteúdo pessoal ou sem sentido não sobe.
 6. Métricas: mensagens iniciadas, custo por mensagem iniciada, gasto, CTR, CPM, alcance, impressões, frequência.
 7. Segredo (token, senha, chave) nunca entra em nota, memória, print ou chat.

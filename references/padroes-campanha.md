@@ -18,7 +18,7 @@ captação via WhatsApp, com três variações por procedimento. Tudo nasce paus
 ### Depois de criar: validação
 1. Ler o anúncio criado (`read.py ad --id`) e conferir `effective_status` (não pode ser DISAPPROVED).
 2. Conferir o preview (`read.py preview --creative <id> --format all`).
-3. Auditar o conjunto (`targeting.py auditar --adset <id>`): só Instagram, raio dentro do limite, público explícito.
+3. Auditar o conjunto (`targeting.py auditar --adset <id>`): posicionamento igual ao que a conta já usa, raio dentro do limite, público explícito.
 4. Só então dizer ao gestor que está pronto para ativar. Ativar é decisão dele.
 
 ## Padrão base: Captação via WhatsApp
@@ -35,7 +35,7 @@ captação via WhatsApp, com três variações por procedimento. Tudo nasce paus
 | Conjunto | billing_event | `IMPRESSIONS` |
 | Conjunto | bid_strategy | `LOWEST_COST_WITHOUT_CAP` |
 | Conjunto | attribution_spec | `[{"event_type": "CLICK_THROUGH", "window_days": 1}]` |
-| Conjunto | publisher_platforms | `["instagram"]` (nunca facebook, audience_network ou messenger) |
+| Conjunto | publisher_platforms | o que os conjuntos ativos da conta usam (só Instagram se a conta roda só no Instagram) |
 | Conjunto | instagram_positions | `["stream", "story", "reels", "explore", "explore_home"]` (explore_home exige explore) |
 | Conjunto | geo | cidade do cliente ou bairros; raio só se já existir na conta e nunca ampliado |
 | Conjunto | targeting_automation | `{"advantage_audience": 0}` ou `1`, sempre explícito |

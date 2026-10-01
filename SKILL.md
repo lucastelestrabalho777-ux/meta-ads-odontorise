@@ -120,7 +120,7 @@ Ao apresentar resultado, sempre dizer o período. Ao propor pausa, mostrar as tr
 
 `geolocations --q "Cidade"` (chaves de cidade, bairro e região no Brasil), `interests --q`, `interest-suggestions --nomes`,
 `behaviors`, `demographics`, `validate`, `reach`, `delivery` e `describe` (com `--spec`, `--spec-file` ou `--adset`),
-e `auditar --adset ID`, que devolve os alertas da casa: Facebook ou outra plataforma fora do Instagram, raio acima do
+e `auditar --adset ID`, que devolve os alertas da casa: raio acima do
 máximo, público sem advantage_audience explícito. A Meta não devolve interesses para termos odontológicos:
 segmentar por localização e público, não por interesse.
 
@@ -141,7 +141,7 @@ Cria campanha, conjunto, criativo a partir de um post do Instagram e anúncio no
 3. Só depois do OK explícito repete com `--confirmo`.
 4. Valida com `read.py ad`, `read.py preview --format all` e `targeting.py auditar`.
 5. Nunca ativa. Ativar é o gestor, no Gerenciador ou por pedido explícito depois.
-Guardas no código: recusa Facebook, Audience Network e Messenger; recusa raio acima do maior raio que a conta já usa
+Guardas no código: conjunto novo sem posicionamento segue o que os conjuntos ativos da conta usam; recusa raio acima do maior raio que a conta já usa
 (ou 10 km se a conta não usa raio); exige público explícito (advantage_audience 0 ou 1); recusa carrossel com mais de 10 cartões. Toda escrita fica em `~/OdontoRise/meta-ads/auditoria.jsonl`.
 Subcomandos: `campanha`, `conjunto`, `criativo-post`, `anuncio`, `captacao` (fluxo completo) e `anuncio-drive`.
 `anuncio-drive`: vídeo ou imagem do Google Drive vira anúncio PAUSED num conjunto que já existe (skill /subir-criativos-drive).
@@ -165,7 +165,7 @@ oferecer no fim: "Quer que eu registre no ClickUp que o roteiro foi feito?". Reg
 1. Nada é executado sem OK explícito do gestor, item por item. Apresentar sugestões numeradas.
 2. Toda campanha, conjunto e anúncio nasce pausado. Ativar é decisão do gestor, depois de conferir.
 3. Antes de pausar um anúncio, cruzar 30, 14 e 7 dias por anúncio. Nunca decidir por uma janela só.
-4. Nunca sugerir posicionamento no Facebook nem ampliar raio de localização.
+4. Nunca ampliar raio de localização. Posicionamento segue o que a conta já usa: não incluir nem tirar Facebook sem entender o que está rodando.
 5. Post do Instagram do cliente passa por análise antes de virar anúncio: paciente final sobe; mentoria, conteúdo pessoal ou sem sentido para captação não sobe, e o gestor é avisado.
 6. Rosto de paciente em anúncio só com termo assinado pelo paciente.
 7. Orçamento em centavos na API (5000 = R$ 50,00). Confirmar o valor com o gestor antes de enviar.

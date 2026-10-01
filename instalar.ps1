@@ -16,6 +16,17 @@ elseif (Test-Path (Join-Path $Aqui ".git")) { Write-Host "atualizando o pacote .
 Write-Host "Pacote: $Aqui"
 New-Item -ItemType Directory -Force -Path (Join-Path $Ws "credentials"), (Join-Path $Ws "meta-ads"), $Skills | Out-Null
 if (-not (Test-Path (Join-Path $Ws "CLAUDE.md"))) { Copy-Item (Join-Path $Aqui "workspace\CLAUDE.md") (Join-Path $Ws "CLAUDE.md"); Write-Host "criado: $Ws\CLAUDE.md" }
+# Regra 4 mudou em 01/10/2026: troca só a linha antiga exata; o resto do CLAUDE.md da pessoa fica como está.
+# O acento vai por [char] para não depender da codificação com que o PowerShell lê este arquivo.
+$ClaudeMd = Join-Path $Ws "CLAUDE.md"
+$Regra4Antiga = "4. Nunca sugerir Facebook como posicionamento nem ampliar raio."
+$Regra4Nova = "4. Nunca ampliar raio. Posicionamento segue o que a conta j$([char]0x00E1) usa (Instagram, Facebook)."
+$Linhas = @(Get-Content -LiteralPath $ClaudeMd -Encoding UTF8)
+if ($Linhas -ccontains $Regra4Antiga) {
+  $Linhas = $Linhas | ForEach-Object { if ($_ -ceq $Regra4Antiga) { $Regra4Nova } else { $_ } }
+  [System.IO.File]::WriteAllLines($ClaudeMd, [string[]]$Linhas, (New-Object System.Text.UTF8Encoding $false))
+  Write-Host "atualizado: regra 4 do $ClaudeMd"
+}
 function Ligar($alvo, $nome) {
   $dest = Join-Path $Skills $nome
   if (Test-Path $dest) { Remove-Item $dest -Force -Recurse }

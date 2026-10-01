@@ -15,12 +15,12 @@ description: Monta a proposta de estratégia para a conta de um cliente a partir
 ## Entrega (uma página, para o gestor executar)
 - Diagnóstico em 5 linhas: o que a conta tem hoje, custo por mensagem atual e tendência.
 - Estrutura proposta: campanhas e conjuntos (1 conjunto = 1 criativo x 1 público), verba diária por conjunto e total,
-  públicos (localização, público quente, semelhante quando houver base), só Instagram.
+  públicos (localização, público quente, semelhante quando houver base), posicionamento igual ao que a conta já usa.
 - Criativos: quantos e quais ângulos, a partir da variação do procedimento; o que pedir ao cliente gravar.
 - Mensagem de boas-vindas do WhatsApp com a pergunta de qualificação do procedimento.
 - Metas: custo por mensagem alvo para 30 dias, com base no histórico da conta (ou do playbook se não houver).
 - Checkpoints: o que olhar em 7 e em 14 dias, e o critério para pausar (três janelas).
 
 ## Regras
-- Nunca ampliar raio nem incluir Facebook. Tudo nasce pausado. Verba é a combinada com o cliente, não uma sugestão de aumento sem OK.
+- Nunca ampliar raio. Posicionamento segue o que a conta já usa: não incluir nem tirar Facebook sem entender o que está rodando. Tudo nasce pausado. Verba é a combinada com o cliente, não uma sugestão de aumento sem OK.
 - Sem travessão. A skill propõe; quem executa é o gestor, item por item.

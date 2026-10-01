@@ -27,6 +27,13 @@ echo "Skills do Claude Code: $SKILLS"
 mkdir -p "$WS/credentials" "$WS/meta-ads" "$SKILLS"
 chmod 700 "$WS/credentials"
 if [ ! -f "$WS/CLAUDE.md" ]; then cp "$AQUI/workspace/CLAUDE.md" "$WS/CLAUDE.md"; echo "criado: $WS/CLAUDE.md"; else echo "mantido: $WS/CLAUDE.md"; fi
+# Regra 4 mudou em 01/10/2026: troca só a linha antiga exata; o resto do CLAUDE.md da pessoa fica como está.
+REGRA4_ANTIGA="4. Nunca sugerir Facebook como posicionamento nem ampliar raio."
+REGRA4_NOVA="4. Nunca ampliar raio. Posicionamento segue o que a conta já usa (Instagram, Facebook)."
+if grep -qxF "$REGRA4_ANTIGA" "$WS/CLAUDE.md"; then
+  awk -v a="$REGRA4_ANTIGA" -v n="$REGRA4_NOVA" '$0 == a { print n; next } { print }' "$WS/CLAUDE.md" > "$WS/CLAUDE.md.tmp" && mv "$WS/CLAUDE.md.tmp" "$WS/CLAUDE.md"
+  echo "atualizado: regra 4 do $WS/CLAUDE.md (posicionamento segue o que a conta já usa)"
+fi
 
 if [ "$AQUI" != "$SKILLS/meta-ads-odontorise" ]; then
   ln -sfn "$AQUI" "$SKILLS/meta-ads-odontorise"; echo "ligada: $SKILLS/meta-ads-odontorise -> $AQUI"
