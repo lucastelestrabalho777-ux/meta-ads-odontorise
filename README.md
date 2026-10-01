@@ -29,7 +29,8 @@ Windows (PowerShell):
 irm https://raw.githubusercontent.com/lucastelestrabalho777-ux/meta-ads-odontorise/main/instalar.ps1 | iex
 ```
 O instalador baixa o pacote em `~/.claude/skills/meta-ads-odontorise`, cria `~/OdontoRise` (CLAUDE.md, credentials, meta-ads),
-liga as skills e instala a biblioteca da Meta. Para atualizar, rode o mesmo comando de novo.
+liga as skills e instala a biblioteca da Meta. Para atualizar, digite `/atualizar-git-odontorise` no Claude
+(ou rode o mesmo comando de novo).
 Passo a passo com telas: Guia de IA OdontoRise, página Onboarding, passos 4 e 5.
 
 ## Regras de segredo

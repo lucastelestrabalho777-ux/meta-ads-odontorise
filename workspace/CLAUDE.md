@@ -11,7 +11,7 @@ qualquer coisa ao Claude: é daqui que ele lê as regras da casa e encontra as s
 | `meta-ads/` | seu cadastro de clientes, seus aprendizados e o log de auditoria; a skill cria e mantém |
 
 As skills (Meta Ads, cadastro, tarefas, legenda, reunião) vivem em `~/.claude/skills/` e chegam pelo
-repositório do GitHub da agência. Atualizar é puxar o repositório de novo.
+repositório do GitHub da agência. Para atualizar, digite /atualizar-git-odontorise no Claude.
 
 ## Regras da casa (resumo; a lista completa está na skill, em references/regras-da-casa.md)
 
