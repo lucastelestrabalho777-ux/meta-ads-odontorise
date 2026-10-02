@@ -1,0 +1,70 @@
+{
+  "_leia": "Modelo do config do board.py. Todo texto aqui é lido pelo CLIENTE: seguir tom-cliente.md. Aceita HTML inline (<b>, <br>).",
+
+  "titulo_aba": "Radar <Especialidade> <Cidade>",
+  "eyebrow": "Dra. Fulana de Tal · Bairro, Cidade · 19 de agosto de 2026",
+  "h1": "Quem disputa os mesmos pacientes<br>na região",
+  "lede": "Levantamento dos anúncios ativos de N <especialistas> que atendem em <regiões>, com os anúncios da própria clínica como comparação.",
+
+  "pagina_cliente": "Nome exato da página do cliente como vem do Meta",
+  "thumbs_dir": "/caminho/para/thumbs",
+  "saida": "/Users/x/Desktop/Concorrencia-Cliente/radar.html",
+  "regioes_proximas": ["Bairro da clínica"],
+
+  "perfis": {
+    "Nome da página no Meta": {
+      "nome": "Dra. Fulana (Clínica X)",
+      "end": "Endereço, Bairro",
+      "reg": "Bairro",
+      "dist": "~3 km",
+      "tipo": "Dentista"
+    }
+  },
+
+  "kpis": [
+    {"valor": 198, "texto": "anúncios ativos<br>dos concorrentes"},
+    {"valor": "90%", "texto": "são vídeo"}
+  ],
+
+  "titulos": {
+    "ranking": "Quantos anúncios cada clínica mantém no ar",
+    "temas": "Assuntos disputados e estilo dos vídeos",
+    "achados": "O que os números mostram",
+    "indicados": "Dos perfis apontados pela clínica, quantos anunciam",
+    "galeria": "Todos os anúncios no ar, clínica por clínica",
+    "analise": "O que este levantamento sugere para a clínica"
+  },
+
+  "notas": {
+    "temas": "Anúncios sem assunto declarado no texto ficaram fora do gráfico.",
+    "pegada": "Leitura feita pelo texto e pela capa de cada vídeo.",
+    "indicados": "Uma frase interpretando a tabela acima.",
+    "galeria": "Ordenados por tempo no ar. Clique em qualquer capa para abrir o anúncio na Biblioteca do Meta.",
+    "analise": "Comparação entre o que a clínica anuncia hoje e o que o mercado da região está fazendo."
+  },
+
+  "achados": [
+    {"numero": "90%", "unidade": "vídeo", "titulo": "Frase curta e conclusiva.",
+     "texto": "Dois a três períodos explicando o número em linguagem de dentista.", "destaque": false}
+  ],
+
+  "indicados": [
+    {"perfil": "@perfil", "quem": "Dra. Fulana, Clínica X", "onde": "Bairro", "anuncia": true, "status": "Sim, 6 anúncios"}
+  ],
+
+  "analise": [
+    {"titulo": "Onde a clínica já está bem", "estilo": "", "resumo": "Uma frase.",
+     "itens": [{"titulo": "Título do ponto", "texto": "Explicação.", "fonte_url": "", "fonte_label": ""}]},
+    {"titulo": "O que o mercado faz e a clínica ainda não", "estilo": "falta", "resumo": "Uma frase.",
+     "itens": [{"titulo": "Título", "texto": "Explicação.",
+                "fonte_url": "https://www.facebook.com/ads/library/?id=123", "fonte_label": "ver o anúncio da Dra. X"}]},
+    {"titulo": "Territórios livres", "estilo": "livre", "resumo": "Uma frase.", "itens": []},
+    {"titulo": "Ideias para os próximos 30 dias", "estilo": "", "resumo": "Cada ideia com o anúncio que inspirou.", "itens": []}
+  ],
+
+  "rodape": [
+    "Fonte: Biblioteca de Anúncios do Meta, coleta de <data>. Apenas anúncios ativos no dia.",
+    "Critério: <especialidade> atuando em <regiões>.",
+    "Distâncias aproximadas em linha reta a partir do endereço da clínica."
+  ]
+}
