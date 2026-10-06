@@ -23,3 +23,10 @@ Valem em toda operação, em qualquer conta, para qualquer papel. Não são suge
 11. **Segredo nunca aparece**: token, chave secreta e senha não entram em resposta, nota, memória ou print.
 12. **Textos sem travessão.** Dois-pontos, vírgula ou ponto.
 13. **Cliente com mais de uma conta de anúncio:** informar qual tem pagamento válido antes de subir qualquer coisa.
+14. **Cada pessoa só lê e opera as contas dos clientes que cuida.** A lista é o cadastro local, montado a partir do
+    campo Gestor do ClickUp (`clientes.py meus`). Conta fora do cadastro: os scripts recusam e o Claude não contorna
+    (não chama `--account` de outro cliente, não cadastra cliente de outro gestor, não lista resultado de conta alheia).
+    Só o head cadastra a carteira inteira, gestor por gestor (`meus --gestor NOME` e `cadastrar --carteira`).
+15. **Limiares da saúde da conta:** custo por mensagem de R$35 ou mais é crítico; anúncio ativo com R$50 (atenção) ou
+    R$100 (crítico) gastos em 7 dias sem mensagem; campanha com R$150 sem mensagem é crítico; conta sem alteração humana
+    há 7 dias é atenção e há mais de 10 dias é crítico.

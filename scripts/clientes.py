@@ -9,7 +9,8 @@ operar a conta. A conta de anúncio do Meta (act_) é confirmada pelo gestor.
 Subcomandos:
   buscar        --nome X                     perfis do ClickUp cujo nome contém X
   meus [--gestor NOME]                       perfis em que o campo Gestor é o dono do token (ou o gestor indicado, para o head)
-  cadastrar     --nome X [--task ID] [--account act_X] [--sem-conta]
+  cadastrar     --nome X [--task ID] [--account act_X] [--sem-conta] [--carteira]
+                (--carteira: só o head, para cadastrar cliente de outro gestor)
   definir-conta --cliente X --account act_X  grava/troca a conta Meta de um cliente cadastrado
   listar                                     cadastro local
   remover       --cliente X
@@ -133,6 +134,19 @@ def cmd_cadastrar(a):
     perfil["slug"] = watchlist.slugify(perfil["nome"])
     resultado = {"ok": True, "cliente": perfil}
 
+    # Regra da casa: cada pessoa só cadastra (e depois opera) os clientes que cuida.
+    # O head cadastra a carteira dos gestores com --carteira.
+    uid, _eu = clickup.quem_sou()
+    donos = clickup.gestor_ids(achados[0])
+    gestores = ", ".join(perfil.get("gestor") or []) or "ninguém"
+    if uid and donos and uid not in donos:
+        if not a.carteira:
+            falha(f"no ClickUp o gestor de '{perfil['nome']}' é {gestores}, não você",
+                  "cada pessoa só opera os clientes que cuida; se você é o head cadastrando a carteira, repita com --carteira")
+        resultado["aviso_escopo"] = f"cadastrado como carteira do head: o gestor deste cliente no ClickUp é {gestores}"
+    elif not donos:
+        resultado["aviso_escopo"] = "o perfil não tem Gestor definido no ClickUp; confira com o head antes de operar"
+
     if a.account:
         act = a.account if a.account.startswith("act_") else f"act_{a.account}"
         ok, info = conferir_conta(act)
@@ -200,7 +214,7 @@ def main():
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("buscar"); s.add_argument("--nome", required=True); s.set_defaults(fn=cmd_buscar)
     s = sub.add_parser("meus"); s.add_argument("--gestor", help="perfis de outro gestor, pelo nome (para o head)"); s.set_defaults(fn=cmd_meus)
-    s = sub.add_parser("cadastrar"); s.add_argument("--nome", required=True); s.add_argument("--task"); s.add_argument("--account"); s.add_argument("--sem-conta", action="store_true"); s.set_defaults(fn=cmd_cadastrar)
+    s = sub.add_parser("cadastrar"); s.add_argument("--nome", required=True); s.add_argument("--task"); s.add_argument("--account"); s.add_argument("--sem-conta", action="store_true"); s.add_argument("--carteira", action="store_true", help="head: cadastrar cliente de outro gestor"); s.set_defaults(fn=cmd_cadastrar)
     s = sub.add_parser("definir-conta"); s.add_argument("--cliente", required=True); s.add_argument("--account", required=True); s.set_defaults(fn=cmd_definir_conta)
     s = sub.add_parser("listar"); s.set_defaults(fn=cmd_listar)
     s = sub.add_parser("remover"); s.add_argument("--cliente", required=True); s.set_defaults(fn=cmd_remover)

@@ -24,7 +24,7 @@ para pessoas vão no stderr. Erro também vem em JSON, com o campo `hint` dizend
 | `read.py` contas, campanhas, conjuntos, anúncios, criativos, prévia, histórico | 21 subcomandos |
 | `insights.py` métricas, `resultado` e `comparar-janelas` | |
 | `targeting.py` cidades, bairros, públicos, `auditar` conjunto | |
-| `saude.py` saldo, reprovados, gasto sem mensagem, recência | |
+| `saude.py` saldo, reprovados, gasto sem mensagem, criativo sem mensagem, custo acima de R$35, recência | base de /contas-criticas |
 | `create.py` subir campanha de captação via WhatsApp; `anuncio-drive` sobe vídeo ou imagem do Google Drive num conjunto que já existe | tudo pausado, com trava; a Página do cliente precisa de WhatsApp Business |
 | `drive.py` lista pasta ou arquivo do Google Drive pelo link público | só leitura, sem baixar |
 | `tarefas.py` tarefas e reuniões do ClickUp | |
@@ -40,8 +40,8 @@ que não existe, dizer isso com clareza e oferecer o que já existe. Nunca impro
 
 | Papel | Skills |
 |---|---|
-| Gestor | /meu-dia · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive |
-| Head | /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding · /raio-x-concorrentes |
+| Gestor | /meu-dia · /contas-criticas · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive |
+| Head | /contas-criticas · /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding · /raio-x-concorrentes |
 | CS | /agendar-reuniao · /resumo-reuniao · /suporte-grupo · /clientes-saudaveis · /monitorar-grupo |
 | Todos | /atualizar-git-odontorise (baixa a versão nova do pacote sem abrir o Terminal) |
 
@@ -76,7 +76,7 @@ slug ou id da task. Se o cliente não estiver cadastrado, cadastrar primeiro.
 |---|---|
 | `buscar --nome X` | perfis do ClickUp cujo nome contém X |
 | `meus [--gestor NOME]` | perfis em que o campo Gestor é o dono do token (ou o gestor indicado, para o head cadastrar a carteira), com marcação de quem já está no cadastro |
-| `cadastrar --nome X [--task ID] [--account act_X]` | copia os campos operacionais do perfil para o cadastro local e sugere contas Meta candidatas |
+| `cadastrar --nome X [--task ID] [--account act_X] [--carteira]` | copia os campos operacionais do perfil para o cadastro local e sugere contas Meta candidatas. Recusa cliente cujo Gestor no ClickUp é outra pessoa; `--carteira` é só do head |
 | `definir-conta --cliente X --account act_X` | confirma a conta Meta do cliente (o gestor escolhe; a skill confere se ele enxerga a conta) |
 | `listar` | cadastro local, com quantos ainda estão sem conta Meta |
 | `remover --cliente X` | tira do cadastro local |
@@ -127,10 +127,12 @@ segmentar por localização e público, não por interesse.
 
 ## Saúde da conta (`scripts/saude.py`)
 
-`conta --cliente X` ou `todas` (todos os clientes do cadastro com conta). Quatro sinais com ok, atenção ou crítico:
+`conta --cliente X` ou `todas` (todos os clientes do cadastro com conta). Cinco sinais com ok, atenção ou crítico:
 saldo e pagamento (dias de saldo em conta pré-paga), anúncios reprovados ou com problema, gasto sem mensagem em
-campanhas de mensagem nos últimos 7 dias (e custo por mensagem contra os 7 dias anteriores), e dias desde a última
-alteração humana. É a base de "contas críticas", "dias sem otimização" e "recarga de saldo".
+campanhas de mensagem nos últimos 7 dias (custo por mensagem de R$35 ou mais é crítico; também compara com os 7 dias
+anteriores), criativos ativos que gastaram R$50 (atenção) ou R$100 (crítico) em 7 dias sem mensagem, e dias desde a
+última alteração humana (7 dias atenção, mais de 10 crítico). É a base de /contas-criticas, /dias-sem-otimizacao,
+/recarga-saldo e /custo-por-mensagem.
 
 ## Subir campanha (`scripts/create.py`)
 
@@ -173,6 +175,7 @@ oferecer no fim: "Quer que eu registre no ClickUp que o roteiro foi feito?". Reg
 8. Ao mostrar resultado de conta, quebrar por campanha antes de atribuir gasto ou resultado a uma campanha.
 9. Token, chave secreta e senha nunca aparecem em resposta, nota, memória ou print.
 10. Textos sem travessão.
+11. Cada pessoa só lê e opera as contas dos clientes que cuida: os do cadastro local, que vem do campo Gestor do ClickUp (`clientes.py meus`). Conta fora do cadastro: os scripts recusam e o Claude não contorna (não chama `--account` de outro cliente, não cadastra cliente de outro gestor). O head cadastra a carteira com `meus --gestor NOME` e `cadastrar --carteira`.
 
 ## Métricas que importam
 

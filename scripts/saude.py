@@ -2,12 +2,16 @@
 """
 meta-ads-odontorise: saúde da conta de anúncio.
 
-Quatro sinais, cada um com status ok, atencao ou critico e uma explicação curta:
-  1. saldo_pagamento      status da conta, forma de pagamento e dias de saldo (pré-paga)
-  2. anuncios_problema    anúncios reprovados (DISAPPROVED) ou com problema (WITH_ISSUES)
-  3. gasto_sem_resultado  campanhas ativas gastando sem mensagem iniciada nos últimos 7 dias
-                          e custo por mensagem de 7 dias contra os 7 dias anteriores
-  4. recencia             dias desde a última alteração feita por uma pessoa no log da conta
+Cinco sinais, cada um com status ok, atencao ou critico e uma explicação curta:
+  1. saldo_pagamento        status da conta, forma de pagamento e dias de saldo (pré-paga)
+  2. anuncios_problema      anúncios reprovados (DISAPPROVED) ou com problema (WITH_ISSUES)
+  3. gasto_sem_resultado    campanhas ativas gastando sem mensagem iniciada nos últimos 7 dias,
+                            custo por mensagem acima do teto (R$35) e custo de 7 dias contra os 7 anteriores
+  4. criativos_sem_resultado  anúncios ativos que gastaram R$50 (atenção) ou R$100 (crítico) em 7 dias sem mensagem
+  5. recencia               dias desde a última alteração feita por uma pessoa no log da conta
+                            (7 dias = atenção, mais de 10 = crítico)
+
+Escopo: só contas do cadastro local da pessoa (lib.resolve_target recusa conta de fora).
 
 Subcomandos:
   conta  --account act_X | --cliente X   [--gasto-minimo 15000]
@@ -49,8 +53,12 @@ DIAS_SALDO_CRITICO = 2             # pré-paga: menos que isso de saldo = críti
 GASTO_MINIMO_CENTAVOS = 15000      # R$150 em 7d: a partir daqui, zero mensagem é problema
 CUSTO_MSG_ATENCAO_PCT = 30         # custo por mensagem subiu 30% ou mais = atenção
 CUSTO_MSG_CRITICO_PCT = 60         # custo por mensagem subiu 60% ou mais = crítico
-RECENCIA_ATENCAO_DIAS = 10         # dias sem alteração humana = atenção
-RECENCIA_CRITICO_DIAS = 18         # dias sem alteração humana = crítico
+CUSTO_MSG_TETO_CENTAVOS = 3500     # custo por mensagem de R$35 ou mais nos últimos 7 dias = crítico, mesmo sem subir
+ANUNCIO_SEM_MSG_ATENCAO_CENTAVOS = 5000   # anúncio ativo que gastou R$50 ou mais em 7 dias sem mensagem = atenção
+ANUNCIO_SEM_MSG_CRITICO_CENTAVOS = 10000  # R$100 ou mais em 7 dias sem mensagem = crítico
+MAX_ANUNCIOS_SEM_RESULTADO = 20    # teto de anúncios sem resultado listados por conta
+RECENCIA_ATENCAO_DIAS = 7          # 7 dias ou mais sem alteração humana = atenção
+RECENCIA_CRITICO_DIAS = 11         # mais de 10 dias sem alteração humana = crítico
 LOG_JANELA_DIAS = 45               # quanto do log da conta é lido
 LOG_ATOR_AUTOMATICO = "Meta"       # evento com esse trecho em actor_name é do sistema, não de pessoa
 ACAO_MENSAGEM = "onsite_conversion.messaging_conversation_started_7d"
@@ -80,7 +88,7 @@ CAMPOS_LOG = "event_type,event_time,actor_name,translated_event_type,object_name
 PESO = {"ok": 0, "erro": 1, "atencao": 1, "critico": 2}
 ICONE = {"ok": "✅", "atencao": "🟠", "critico": "🔴", "erro": "⚠️"}
 SINAIS = (("saldo_pagamento", "saldo"), ("anuncios_problema", "anúncios"),
-          ("gasto_sem_resultado", "gasto"), ("recencia", "recência"))
+          ("gasto_sem_resultado", "gasto"), ("criativos_sem_resultado", "criativos"), ("recencia", "recência"))
 
 
 # ---------------------------------------------------------------------------
@@ -202,6 +210,11 @@ def _janela_vazia():
     return {"gasto": 0.0, "mensagens": 0, "custo_por_mensagem": None}
 
 
+def _acima_do_teto(custo_por_mensagem):
+    """Custo por mensagem igual ou acima do teto da casa (R$35)."""
+    return custo_por_mensagem is not None and round(custo_por_mensagem * 100) >= CUSTO_MSG_TETO_CENTAVOS
+
+
 def _fechar_janela(j):
     j["gasto"] = round(j["gasto"], 2)
     j["custo_por_mensagem"] = round(j["gasto"] / j["mensagens"], 2) if j["mensagens"] else None
@@ -286,15 +299,23 @@ def sinal_anuncios(acct):
                 "motivo": issues[0].get("error_summary") if issues else None}
         (reprovados if item["status"] == "DISAPPROVED" else com_problema).append(item)
     todos = reprovados + com_problema
-    em_ativas = sum(1 for a in todos if a["campanha_status"] == "ACTIVE")
+    reprovados_ativos = sum(1 for a in reprovados if a["campanha_status"] == "ACTIVE")
+    problema_ativos = sum(1 for a in com_problema if a["campanha_status"] == "ACTIVE")
+    em_ativas = reprovados_ativos + problema_ativos
     out = {"reprovados": len(reprovados), "com_problema": len(com_problema), "em_campanha_ativa": em_ativas,
+           "reprovados_em_campanha_ativa": reprovados_ativos, "com_problema_em_campanha_ativa": problema_ativos,
            "lista_truncada": len(r["itens"]) >= MAX_ANUNCIOS_PROBLEMA, "anuncios": todos}
-    if reprovados:
-        exp = f"{len(reprovados)} anúncio(s) reprovado(s)" + (f" e {len(com_problema)} com problema" if com_problema else "")
-        return {"status": "critico", "explicacao": exp + f" ({em_ativas} em campanha ativa)", **out}
+    if not todos:
+        return {"status": "ok", "explicacao": "nenhum anúncio reprovado ou com problema", **out}
+    exp = f"{len(reprovados)} anúncio(s) reprovado(s)" if reprovados else ""
     if com_problema:
-        return {"status": "atencao", "explicacao": f"{len(com_problema)} anúncio(s) com problema ({em_ativas} em campanha ativa)", **out}
-    return {"status": "ok", "explicacao": "nenhum anúncio reprovado ou com problema", **out}
+        exp += (" e " if exp else "") + f"{len(com_problema)} com problema"
+    # Só o que está em campanha ativa afeta a entrega de hoje. O resto fica no histórico.
+    if reprovados_ativos:
+        return {"status": "critico", "explicacao": exp + f" ({reprovados_ativos} reprovado(s) em campanha ativa): trocar ou ajustar o criativo", **out}
+    if problema_ativos:
+        return {"status": "atencao", "explicacao": exp + f" ({problema_ativos} com problema em campanha ativa)", **out}
+    return {"status": "ok", "explicacao": exp + ", todos em campanhas pausadas: não afetam a entrega", **out}
 
 
 # ---------------------------------------------------------------------------
@@ -342,6 +363,7 @@ def sinal_gasto(acct, janelas, atual, anterior, erro_conta, gasto_minimo):
         _fechar_janela(c["atual"])
         _fechar_janela(c["anterior"])
         c["variacao_custo_pct"] = _variacao_pct(c["anterior"]["custo_por_mensagem"], c["atual"]["custo_por_mensagem"])
+        c["custo_acima_do_teto"] = _acima_do_teto(c["atual"]["custo_por_mensagem"])
         campanhas.append(c)
         if c["mede_mensagem"] and c["atual"]["gasto"] * 100 > gasto_minimo and c["atual"]["mensagens"] == 0:
             sem_resultado.append(c)
@@ -350,9 +372,13 @@ def sinal_gasto(acct, janelas, atual, anterior, erro_conta, gasto_minimo):
     variacao = _variacao_pct(anterior["custo_por_mensagem"], atual["custo_por_mensagem"])
     gasto_conversa = round(sum(c["atual"]["gasto"] for c in campanhas if c["mede_mensagem"]), 2)
     outro_objetivo = [c["nome"] for c in campanhas if not c["mede_mensagem"]]
+    acima_do_teto = _acima_do_teto(atual["custo_por_mensagem"])
+    campanhas_acima_do_teto = [c["nome"] for c in campanhas if c["mede_mensagem"] and c["custo_acima_do_teto"]]
     out = {"gasto_minimo": _reais(gasto_minimo), "conta_7d": atual, "conta_7d_anteriores": anterior,
            "gasto_7d_campanhas_de_mensagem": gasto_conversa, "campanhas_outro_objetivo": outro_objetivo,
            "variacao_custo_mensagem_pct": variacao, "campanhas_ativas": len(campanhas),
+           "teto_custo_mensagem": _reais(CUSTO_MSG_TETO_CENTAVOS), "custo_acima_do_teto": acima_do_teto,
+           "campanhas_acima_do_teto": campanhas_acima_do_teto,
            "campanhas_sem_resultado": [{"id": c["id"], "nome": c["nome"], "gasto_7d": c["atual"]["gasto"]} for c in sem_resultado],
            "campanhas": campanhas}
 
@@ -366,9 +392,12 @@ def sinal_gasto(acct, janelas, atual, anterior, erro_conta, gasto_minimo):
     if atual["mensagens"] == 0:
         return {"status": "ok", "explicacao": f"{_brl(atual['gasto'])} gastos em {JANELA_DIAS} dias, abaixo do mínimo de {_brl(_reais(gasto_minimo))}, sem mensagem iniciada", **out}
     base = f"{atual['mensagens']} mensagem(ns) a {_brl(atual['custo_por_mensagem'])}"
+    comp = "" if variacao is None else f" (antes {_brl(anterior['custo_por_mensagem'])}, {'+' if variacao >= 0 else ''}{_num(variacao, 0)}%)"
+    if acima_do_teto:
+        quais = f"; campanhas acima do teto: {', '.join(campanhas_acima_do_teto)}" if campanhas_acima_do_teto else ""
+        return {"status": "critico", "explicacao": f"custo por mensagem acima do teto de {_brl(_reais(CUSTO_MSG_TETO_CENTAVOS))}: " + base + comp + quais, **out}
     if variacao is None:
         return {"status": "ok", "explicacao": base + f" (sem base de comparação nos {JANELA_DIAS} dias anteriores)", **out}
-    comp = f" (antes {_brl(anterior['custo_por_mensagem'])}, {'+' if variacao >= 0 else ''}{_num(variacao, 0)}%)"
     if variacao >= CUSTO_MSG_CRITICO_PCT:
         return {"status": "critico", "explicacao": f"custo por mensagem subiu {_num(variacao, 0)}%: " + base + comp, **out}
     if variacao >= CUSTO_MSG_ATENCAO_PCT:
@@ -377,7 +406,74 @@ def sinal_gasto(acct, janelas, atual, anterior, erro_conta, gasto_minimo):
 
 
 # ---------------------------------------------------------------------------
-# Sinal 4: recência da última alteração humana
+# Sinal 4: criativo (anúncio) ativo gastando sem mensagem
+# ---------------------------------------------------------------------------
+
+def sinal_criativos(acct, janelas, erro_conta):
+    """
+    Anúncios ativos de campanhas de mensagem que gastaram R$50 (atenção) ou R$100 (crítico)
+    nos últimos 7 dias sem nenhuma mensagem iniciada. Aponta candidatos; não decide pausa:
+    pausar exige cruzar 30, 14 e 7 dias por anúncio (insights.py comparar-janelas --level ad).
+    """
+    if erro_conta:
+        return {"status": "erro", "explicacao": f"não consegui ler os insights da conta ({erro_conta})"}
+    params = {"level": "ad", "fields": "ad_id,ad_name,adset_name,campaign_id,campaign_name,objective,spend,actions",
+              "time_ranges": _time_ranges(janelas), "limit": PAGINA_INSIGHTS,
+              "filtering": json.dumps([{"field": "ad.effective_status", "operator": "IN", "value": ["ACTIVE"]}])}
+    r = _coletar(f"{acct}/insights", params, max_paginas=MAX_PAGINAS_INSIGHTS)
+    if not r["ok"]:
+        return {"status": "erro", "explicacao": f"não consegui ler os insights por anúncio ({r['erro'].get('erro')})"}
+
+    por_anuncio = {}
+    for linha in r["itens"]:
+        nome_janela = _qual_janela(linha, janelas)
+        if not nome_janela:
+            continue
+        a = por_anuncio.setdefault(linha.get("ad_id"), {
+            "id": linha.get("ad_id"), "nome": linha.get("ad_name"), "conjunto": linha.get("adset_name"),
+            "campanha": linha.get("campaign_name"), "campanha_id": linha.get("campaign_id"),
+            "mede_mensagem": (linha.get("objective") or "") in OBJETIVOS_DE_MENSAGEM,
+            "atual": _janela_vazia(), "anterior": _janela_vazia()})
+        a[nome_janela]["gasto"] += _gasto(linha)
+        a[nome_janela]["mensagens"] += _mensagens(linha)
+
+    de_mensagem, sem_resultado = 0, []
+    for a in por_anuncio.values():
+        _fechar_janela(a["atual"])
+        _fechar_janela(a["anterior"])
+        if not a["mede_mensagem"]:
+            continue
+        de_mensagem += 1
+        gasto_cent = round(a["atual"]["gasto"] * 100)
+        if a["atual"]["mensagens"] == 0 and gasto_cent >= ANUNCIO_SEM_MSG_ATENCAO_CENTAVOS:
+            a["nivel"] = "critico" if gasto_cent >= ANUNCIO_SEM_MSG_CRITICO_CENTAVOS else "atencao"
+            sem_resultado.append(a)
+    sem_resultado.sort(key=lambda a: -a["atual"]["gasto"])
+
+    lista = [{"id": a["id"], "nome": a["nome"], "conjunto": a["conjunto"], "campanha": a["campanha"],
+              "nivel": a["nivel"], "gasto_7d": a["atual"]["gasto"],
+              "gasto_7d_anteriores": a["anterior"]["gasto"], "mensagens_7d_anteriores": a["anterior"]["mensagens"],
+              "custo_7d_anteriores": a["anterior"]["custo_por_mensagem"]}
+             for a in sem_resultado[:MAX_ANUNCIOS_SEM_RESULTADO]]
+    out = {"limiar_atencao": _reais(ANUNCIO_SEM_MSG_ATENCAO_CENTAVOS), "limiar_critico": _reais(ANUNCIO_SEM_MSG_CRITICO_CENTAVOS),
+           "anuncios_ativos_lidos": len(por_anuncio), "anuncios_ativos_de_mensagem": de_mensagem,
+           "sem_resultado": len(sem_resultado), "lista_truncada": len(sem_resultado) > MAX_ANUNCIOS_SEM_RESULTADO,
+           "leitura_truncada": r["paginas"] >= MAX_PAGINAS_INSIGHTS, "anuncios_sem_resultado": lista}
+
+    if not sem_resultado:
+        if de_mensagem == 0:
+            return {"status": "ok", "explicacao": "nenhum anúncio ativo em campanha de mensagem", **out}
+        return {"status": "ok", "explicacao": f"{de_mensagem} anúncio(s) ativo(s), nenhum gastou {_brl(_reais(ANUNCIO_SEM_MSG_ATENCAO_CENTAVOS))} ou mais em {JANELA_DIAS} dias sem mensagem", **out}
+    total = round(sum(a["atual"]["gasto"] for a in sem_resultado), 2)
+    pior = sem_resultado[0]
+    exp = (f"{len(sem_resultado)} anúncio(s) ativo(s) gastaram {_brl(total)} em {JANELA_DIAS} dias sem nenhuma mensagem iniciada "
+           f"(maior: {pior['nome']}, {_brl(pior['atual']['gasto'])}): cruzar 30, 14 e 7 dias antes de pausar")
+    status = "critico" if any(a["nivel"] == "critico" for a in sem_resultado) else "atencao"
+    return {"status": status, "explicacao": exp, **out}
+
+
+# ---------------------------------------------------------------------------
+# Sinal 5: recência da última alteração humana
 # ---------------------------------------------------------------------------
 
 def _e_humano(evento):
@@ -409,9 +505,9 @@ def sinal_recencia(acct):
                                      "o_que": o_que, "objeto": ev.get("object_name")}})
     exp = f"última alteração humana há {dias} dia(s) ({ev.get('actor_name')}: {o_que})"
     if dias >= RECENCIA_CRITICO_DIAS:
-        return {"status": "critico", "explicacao": exp + ": conta abandonada, revisar hoje", **out}
+        return {"status": "critico", "explicacao": exp + ": mais de 10 dias sem mexer, otimizar hoje", **out}
     if dias >= RECENCIA_ATENCAO_DIAS:
-        return {"status": "atencao", "explicacao": exp + ": agendar uma revisão", **out}
+        return {"status": "atencao", "explicacao": exp + ": perto de 10 dias sem mexer, otimizar esta semana", **out}
     return {"status": "ok", "explicacao": exp, **out}
 
 
@@ -442,6 +538,7 @@ def analisar_conta(acct, gasto_minimo, cliente=None):
         "saldo_pagamento": sinal_saldo(conta, atual["gasto"]),
         "anuncios_problema": sinal_anuncios(acct),
         "gasto_sem_resultado": sinal_gasto(acct, janelas, atual, anterior, erro_ins, gasto_minimo),
+        "criativos_sem_resultado": sinal_criativos(acct, janelas, erro_ins),
         "recencia": sinal_recencia(acct),
     }
     return {"ok": True, "cliente": cliente,
@@ -528,7 +625,7 @@ def _add_gasto_minimo(parser):
 
 
 def main():
-    p = argparse.ArgumentParser(description="Saúde de contas de anúncio em 4 sinais (só leitura)")
+    p = argparse.ArgumentParser(description="Saúde de contas de anúncio em 5 sinais (só leitura; só contas do seu cadastro)")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("conta", help="uma conta: --account act_X ou --cliente <nome, #código ou slug>")
     lib.add_target_args(s)

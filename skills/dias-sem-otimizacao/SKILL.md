@@ -12,7 +12,7 @@ Para uma conta: `scripts/read.py activities --cliente X --dias 45 --so-humanas -
 ## Como responder
 1. Rode `saude.py todas` e leia `recencia.dias_sem_alteracao` e `recencia.ultima_alteracao` de cada conta.
 2. Tabela ordenada da conta mais parada para a mais recente: cliente · dias sem alteração · última ação (o que foi e quem fez).
-   🔴 18 dias ou mais · 🟠 10 a 17 · ✅ menos de 10.
+   🔴 mais de 10 dias · 🟠 7 a 10 · ✅ menos de 7.
 3. Para cada conta 🔴 ou 🟠, uma sugestão concreta do que fazer hoje, cruzando com o custo por mensagem
    (`gasto_sem_resultado`): custo subindo e conta parada é prioridade máxima. Sugerir criativo, público, verba ou pausa,
    nunca "acompanhar".

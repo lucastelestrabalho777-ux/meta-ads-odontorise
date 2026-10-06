@@ -24,8 +24,9 @@ repositório do GitHub da agência. Para atualizar, digite /atualizar-git-odonto
 7. Segredo (token, senha, chave) nunca entra em nota, memória, print ou chat.
 8. Textos sem travessão.
 9. Roteiro escrito para cliente: no fim, oferecer registrar no ClickUp (/registrar-otimizacao, tarefa "Roteiro").
+10. Cada pessoa só lê e opera as contas dos clientes que cuida (o cadastro local, vindo do ClickUp). Conta de outro gestor: nem ler, nem cadastrar. O head cadastra a carteira inteira.
 
 ## Como pedir
 
 - "rode o setup da skill Meta" · "cadastra o cliente X" · "resultado da conta X nos últimos 7 dias"
-- "compara as janelas dos anúncios da X" · "saúde da conta X" · "meu dia" · "legenda para esse vídeo"
+- "compara as janelas dos anúncios da X" · "saúde da conta X" · "contas críticas" · "meu dia" · "legenda para esse vídeo"

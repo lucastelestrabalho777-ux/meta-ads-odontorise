@@ -16,7 +16,7 @@ Para um cliente só: `scripts/insights.py resultado --cliente X` (padrão últim
    Cliente sem gasto: mostrar "sem gasto" e perguntar se é intencional. Cliente com gasto e zero mensagem: 🔴 no topo.
 3. Abaixo da tabela, um bloco "para colar na planilha": só os valores de custo por mensagem, um por linha,
    vírgula decimal, sem "R$", na mesma ordem em que o gestor pediu (se ele mandar a ordem, seguir a dele).
-4. Feche com 3 apontamentos no máximo: onde o custo subiu mais de 30%, onde caiu, onde não há mensagem.
+4. Feche com 3 apontamentos no máximo: onde o custo está em R$35 ou mais (`custo_acima_do_teto`), onde subiu mais de 30%, onde caiu, onde não há mensagem.
    Cada apontamento sugere uma ação concreta (criativo, público, verba, pausa), nunca "observar".
 
 ## Regras

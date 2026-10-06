@@ -252,6 +252,28 @@ def resolve_account(args_account=None):
     return acct
 
 
+def exigir_no_cadastro(acct):
+    """
+    Regra da casa: cada pessoa só lê e opera as contas dos clientes que cuida. O cadastro
+    local (clientes.py meus, a partir do campo Gestor do ClickUp) é a lista dessa pessoa.
+    Conta fora do cadastro: recusa com orientação, em JSON no stdout e texto no stderr.
+    Devolve o cliente do cadastro quando a conta é dele.
+    """
+    from . import watchlist
+    dados = watchlist.carregar()
+    for c in dados.get("clientes", []):
+        if c.get("act_id") == acct:
+            return c
+    msg = f"a conta {acct} não está no seu cadastro de clientes"
+    hint = ("regra da casa: cada pessoa só lê e opera as contas dos clientes que cuida. "
+            f"Se o cliente é seu, cadastre com: clientes.py cadastrar --nome <nome> --account {acct}. "
+            "Se não é seu, peça ao gestor responsável ou ao head.")
+    print(f"ERRO: {msg}.", file=sys.stderr)
+    print(f"  {hint}", file=sys.stderr)
+    print(json.dumps({"ok": False, "erro": msg, "hint": hint, "cadastro": watchlist.CADASTRO_PATH}, ensure_ascii=False, indent=2))
+    sys.exit(1)
+
+
 def add_target_args(parser):
     """--account act_X ou --cliente <nome, código ou slug do cadastro>."""
     parser.add_argument("--account", help="Conta de anúncio (act_123)")
@@ -266,7 +288,9 @@ def resolve_target(args):
     acct = getattr(args, "account", None)
     cli = getattr(args, "cliente", None)
     if acct:
-        return resolve_account(acct)
+        acct = resolve_account(acct)
+        exigir_no_cadastro(acct)
+        return acct
     if cli:
         from . import watchlist
         dados = watchlist.carregar()
