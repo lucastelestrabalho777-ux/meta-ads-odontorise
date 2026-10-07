@@ -32,6 +32,7 @@ para pessoas vão no stderr. Erro também vem em JSON, com o campo `hint` dizend
 | `registro.py` registro de otimização e roteiro no ClickUp (cria a tarefa em Tarefas - Clientes; saldo comenta a tarefa rotineira) | escreve no ClickUp só com --confirmo |
 | `alertas.py` clientes em alerta (listar), status do projeto e abrir alerta | escreve no ClickUp só com --confirmo |
 | `design.py` e `onboarding.py` acompanhamento do design e do onboarding | só leitura |
+| `dossie.py` dossiê do cliente novo para a Reunião de Onboarding (perfil, formulário de pré-onboarding, etapas, reunião, anexos) | só leitura; base de /preparar-onboarding |
 
 Ainda não existe: editar conjunto ou anúncio, duplicar, ativar por script. Quando o gestor pedir algo
 que não existe, dizer isso com clareza e oferecer o que já existe. Nunca improvisar chamadas à API por fora dos scripts.
@@ -41,7 +42,7 @@ que não existe, dizer isso com clareza e oferecer o que já existe. Nunca impro
 | Papel | Skills |
 |---|---|
 | Gestor | /meu-dia · /contas-criticas · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive |
-| Head | /contas-criticas · /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding · /raio-x-concorrentes |
+| Head | /contas-criticas · /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding · /preparar-onboarding · /raio-x-concorrentes |
 | CS | /agendar-reuniao · /resumo-reuniao · /suporte-grupo · /clientes-saudaveis · /monitorar-grupo |
 | Todos | /atualizar-git-odontorise (baixa a versão nova do pacote sem abrir o Terminal) |
 
@@ -156,6 +157,12 @@ Pré-requisito da conta do cliente: a Página precisa ter um WhatsApp Business c
 
 `minhas --dias 7` (atrasadas, hoje, próximas, sem data), `tarefa --id X` (descrição, subtarefas, comentários),
 `reunioes --dias 14` (reuniões com clientes marcadas). Só leitura. É a base da skill /meu-dia.
+
+## Dossiê do cliente novo (`scripts/dossie.py`)
+
+`proximas --dias 7` (reuniões de onboarding marcadas) e `cliente --cliente <nome, #código ou id do perfil>` (perfil operacional, Formulário de
+Pré-Onboarding agrupado nos blocos da reunião com alertas de inconsistência, etapas do onboarding, reunião marcada, anexos, comentários,
+demandas comerciais e o que falta). Só leitura; dados pessoais e de contrato não saem. É a base da skill /preparar-onboarding.
 
 ## Registro no ClickUp (`scripts/registro.py`)
 
