@@ -25,8 +25,9 @@ para pessoas vão no stderr. Erro também vem em JSON, com o campo `hint` dizend
 | `insights.py` métricas, `resultado` e `comparar-janelas` | |
 | `targeting.py` cidades, bairros, públicos, `auditar` conjunto | |
 | `saude.py` saldo, reprovados, gasto sem mensagem, criativo sem mensagem, custo acima de R$35, recência | base de /contas-criticas |
-| `create.py` subir campanha de captação via WhatsApp; `anuncio-drive` sobe vídeo ou imagem do Google Drive num conjunto que já existe | tudo pausado, com trava; a Página do cliente precisa de WhatsApp Business |
+| `create.py` subir campanha de captação via WhatsApp; `anuncio-drive` sobe vídeo ou imagem do Google Drive e `anuncio-post` sobe um post orgânico do Instagram num conjunto que já existe | tudo pausado, com trava; a Página do cliente precisa de WhatsApp Business |
 | `drive.py` lista pasta ou arquivo do Google Drive pelo link público | só leitura, sem baixar |
+| `posts.py` posts orgânicos do Instagram do cliente com legenda, métricas e quais já são anúncio | só leitura; base de /radar-criativos |
 | `tarefas.py` tarefas e reuniões do ClickUp | |
 | `transcrever.py` transcrição local de vídeo ou áudio | precisa do ambiente de transcrição |
 | `registro.py` registro de otimização e roteiro no ClickUp (cria a tarefa em Tarefas - Clientes; saldo comenta a tarefa rotineira) | escreve no ClickUp só com --confirmo |
@@ -41,7 +42,7 @@ que não existe, dizer isso com clareza e oferecer o que já existe. Nunca impro
 
 | Papel | Skills |
 |---|---|
-| Gestor | /meu-dia · /contas-criticas · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive |
+| Gestor | /meu-dia · /contas-criticas · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive · /radar-criativos |
 | Head | /contas-criticas · /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding · /preparar-onboarding · /raio-x-concorrentes |
 | CS | /agendar-reuniao · /resumo-reuniao · /suporte-grupo · /clientes-saudaveis · /monitorar-grupo |
 | Todos | /atualizar-git-odontorise (baixa a versão nova do pacote sem abrir o Terminal) |
@@ -135,6 +136,14 @@ anteriores), criativos ativos que gastaram R$50 (atenção) ou R$100 (crítico) 
 última alteração humana (7 dias atenção, mais de 10 crítico). É a base de /contas-criticas, /dias-sem-otimizacao,
 /recarga-saldo e /custo-por-mensagem.
 
+## Posts do Instagram (`scripts/posts.py`)
+
+`listar --cliente X --dias 7 --radar 30`: descobre o Instagram pela Página promovida da conta e lista os posts da janela com legenda,
+formato, data, link, capa, curtidas, comentários, alcance, salvos, compartilhamentos, taxa de engajamento e quais já viraram anúncio
+na conta (pelo id da mídia, porque boost gera link próprio). O radar traz os posts de 8 a 30 dias ainda sem anúncio. `post --id`
+detalha um post (cartões do carrossel, dono). Só leitura. Quem classifica é o Claude: paciente final sobe; mentoria, pessoal,
+institucional ou política não sobe (regra 5). É a base de /radar-criativos.
+
 ## Subir campanha (`scripts/create.py`)
 
 Cria campanha, conjunto, criativo a partir de um post do Instagram e anúncio no padrão da casa
@@ -147,7 +156,10 @@ Cria campanha, conjunto, criativo a partir de um post do Instagram e anúncio no
 5. Nunca ativa. Ativar é o gestor, no Gerenciador ou por pedido explícito depois.
 Guardas no código: conjunto novo sem posicionamento segue o que os conjuntos ativos da conta usam; recusa raio acima do maior raio que a conta já usa
 (ou 10 km se a conta não usa raio); exige público explícito (advantage_audience 0 ou 1); recusa carrossel com mais de 10 cartões. Toda escrita fica em `~/OdontoRise/meta-ads/auditoria.jsonl`.
-Subcomandos: `campanha`, `conjunto`, `criativo-post`, `anuncio`, `captacao` (fluxo completo) e `anuncio-drive`.
+Subcomandos: `campanha`, `conjunto`, `criativo-post`, `anuncio`, `captacao` (fluxo completo), `anuncio-drive` e `anuncio-post`.
+`anuncio-post`: post orgânico do Instagram (id de `posts.py listar`) vira anúncio PAUSED num conjunto que já existe, mantendo curtidas e
+comentários do post; botão, boas-vindas e UTMs vêm do anúncio ativo mais recente do conjunto. Recusa post que já é anúncio no conjunto,
+carrossel com mais de 10 cartões e post de outro Instagram (skill /radar-criativos).
 `anuncio-drive`: vídeo ou imagem do Google Drive vira anúncio PAUSED num conjunto que já existe (skill /subir-criativos-drive).
 A Meta busca o vídeo direto no Drive pelo link, nada é baixado no computador; o link precisa estar como "Qualquer pessoa
 com o link". Página, Instagram, botão, título, boas-vindas e UTMs vêm do anúncio ativo mais recente do conjunto.

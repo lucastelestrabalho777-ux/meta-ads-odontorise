@@ -29,4 +29,4 @@ repositório do GitHub da agência. Para atualizar, digite /atualizar-git-odonto
 ## Como pedir
 
 - "rode o setup da skill Meta" · "cadastra o cliente X" · "resultado da conta X nos últimos 7 dias"
-- "compara as janelas dos anúncios da X" · "saúde da conta X" · "contas críticas" · "meu dia" · "legenda para esse vídeo"
+- "compara as janelas dos anúncios da X" · "saúde da conta X" · "contas críticas" · "radar de criativos do X" · "meu dia" · "legenda para esse vídeo"

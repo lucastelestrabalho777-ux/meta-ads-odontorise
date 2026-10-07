@@ -14,6 +14,9 @@ Subcomandos:
                  (--welcome-from-creative ID | --welcome-json '{...}')
   anuncio        --cliente/--account --conjunto ID --criativo ID --nome "..."
   captacao       fluxo completo (campanha + conjunto + criativo de post + anúncio) com os mesmos argumentos
+  anuncio-post   --cliente/--account --conjunto ID --media-id ID --nome "..." [--modelo ID] [--mesmo-post]
+                 post orgânico do Instagram vira anúncio PAUSADO num conjunto que já existe, mantendo curtidas
+                 e comentários; botão, boas-vindas e UTMs copiados do anúncio ativo do conjunto (skill /radar-criativos)
   anuncio-drive  --cliente/--account --conjunto ID --arquivo LINK_OU_ID --nome "..." --legenda "..." [--modelo ID_ANUNCIO]
                  vídeo ou imagem do Google Drive vira anúncio PAUSED num conjunto que já existe. A Meta busca o vídeo
                  direto no Drive (nada é baixado no computador). Página, Instagram, botão, boas-vindas, título e UTMs
@@ -38,7 +41,7 @@ for _s in (sys.stdout, sys.stderr):
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib  # noqa: E402
-from lib import drive  # noqa: E402
+from lib import drive, instagram  # noqa: E402
 
 POSICOES_IG = ["stream", "story", "reels", "explore", "explore_home"]
 RECURSOS_OPT_OUT = ["advantage_plus_creative", "image_touchups", "carousel_to_video", "text_optimizations",
@@ -440,6 +443,72 @@ def cmd_anuncio_drive(a):
                     "proximo_passo": f"validar: read.py ad --id {ad['id']} e read.py preview --creative {cr['id']} --format all"})
 
 
+# ---------------------------------------------------------------------------
+# Anúncio a partir de um post orgânico do Instagram (conjunto que já existe)
+# ---------------------------------------------------------------------------
+
+def payload_criativo_post_molde(a, molde):
+    """Post orgânico vira criativo com o botão, as boas-vindas e as UTMs do anúncio modelo. Mantém curtidas e comentários."""
+    p = {"name": a.nome, "source_instagram_media_id": a.media_id, "instagram_user_id": molde["instagram_user_id"],
+         "call_to_action": molde["call_to_action"],
+         "degrees_of_freedom_spec": {"creative_features_spec": {r: {"enroll_status": "OPT_OUT"} for r in RECURSOS_OPT_OUT}}}
+    if molde.get("page_welcome_message"):
+        p["page_welcome_message"] = molde["page_welcome_message"]
+    if molde.get("url_tags"):
+        p["url_tags"] = molde["url_tags"]
+    return p
+
+
+@lib.handle_fb_error
+def cmd_anuncio_post(a):
+    lib.init_api(quiet=True)
+    acct = lib.resolve_target(a)
+    conj = conjunto_destino(acct, a.conjunto)
+    molde = molde_do_modelo(anuncio_modelo(a.conjunto, a.modelo))
+    checar_post(a.media_id)
+    ok, post = lib.graph_get(a.media_id, params={"fields": "id,caption,permalink,timestamp,media_type,media_product_type,owner"})
+    if not ok:
+        _falha(f"não consegui ler o post {a.media_id} ({post.get('erro')})", {"acao": "conferir o id com posts.py listar --cliente X"})
+    dono = (post.get("owner") or {}).get("id")
+    if dono and dono != molde["instagram_user_id"]:
+        _falha(f"o post é do Instagram {dono}, e o conjunto anuncia pelo Instagram {molde['instagram_user_id']} (anúncio modelo '{molde['anuncio']}')",
+               {"acao": "conferir se o post é do cliente certo; se o conjunto usa outro Instagram, informar --modelo <anúncio desse Instagram>"})
+    ok, por = instagram.anuncios_por_post(acct)
+    existentes = por.get(a.media_id, []) if ok else []
+    no_conjunto = [x for x in existentes if x.get("conjunto_id") == a.conjunto]
+    if no_conjunto and not a.mesmo_post:
+        x = no_conjunto[0]
+        _falha(f"este post já é anúncio neste conjunto: '{x['nome']}' ({x['anuncio_id']}, {x['status']}, criado em {x['criado']})",
+               {"acao": "não duplicar. Se o gestor quiser mesmo assim, repetir com --mesmo-post"})
+    pcr = payload_criativo_post_molde(a, molde)
+    legenda = post.get("caption") or ""
+    resumo = {"post": {"id": a.media_id, "data": (post.get("timestamp") or "")[:10], "formato": instagram.formato(post),
+                       "link": post.get("permalink"), "legenda_inicio": legenda[:160]},
+              "campanha": (conj.get("campaign") or {}).get("name"), "conjunto": conj.get("name"),
+              "conjunto_status": conj.get("effective_status"),
+              "posicionamentos": (conj.get("targeting") or {}).get("publisher_platforms") or "automático",
+              "anuncio_modelo": molde["anuncio"], "nome_do_anuncio": a.nome,
+              "botao": (molde.get("call_to_action") or {}).get("type"),
+              "boas_vindas_copiadas": bool(molde.get("page_welcome_message")), "utms_copiadas": bool(molde.get("url_tags")),
+              "ja_anuncio_em_outro_conjunto": [f"{x['conjunto']} ({x['status']})" for x in existentes if x.get("conjunto_id") != a.conjunto],
+              "status": "PAUSED"}
+    aviso = None if molde.get("page_welcome_message") else "o anúncio modelo não tem boas-vindas: o novo também não terá"
+    if not ok:
+        aviso = (aviso + "; " if aviso else "") + f"não conferi se o post já é anúncio ({por.get('erro')})"
+    if not a.confirmo:
+        lib.print_json({"ok": False, "ensaio": True, "resumo": resumo,
+                        "enviaria": {"criativo": pcr, "anuncio": payload_anuncio(a, a.conjunto, "<id do criativo>")},
+                        "aviso": aviso, "acao": "nada foi enviado. Depois do OK do gestor, repetir com --confirmo"})
+        sys.exit(1)
+    quem = _quem()
+    cr = _post(acct, "adcreatives", pcr, "criar criativo", f"{a.nome} (post {a.media_id})", quem)
+    lib.safe_delay(1)
+    ad = _post(acct, "ads", payload_anuncio(a, a.conjunto, cr["id"]), "criar anúncio", a.nome, quem)
+    lib.print_json({"ok": True, "conta": acct, "conjunto": conj.get("name"), "anuncio_id": ad["id"], "criativo_id": cr["id"],
+                    "post": a.media_id, "link_do_post": post.get("permalink"), "nome": a.nome, "status": "PAUSED", "aviso": aviso,
+                    "proximo_passo": f"validar: read.py ad --id {ad['id']} e read.py preview --creative {cr['id']} --format all"})
+
+
 def main():
     p = argparse.ArgumentParser(description="Subir campanha de captação via WhatsApp (tudo pausado)")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -467,6 +536,8 @@ def main():
     s = sub.add_parser("captacao"); comum(s); s.add_argument("--data"); s.add_argument("--sufixo"); args_conjunto(s); args_criativo(s); s.set_defaults(fn=cmd_captacao)
     s = sub.add_parser("anuncio-drive"); comum(s); s.add_argument("--conjunto", required=True); s.add_argument("--arquivo", required=True, help="link ou id do arquivo no Drive")
     s.add_argument("--nome", required=True); s.add_argument("--legenda", required=True); s.add_argument("--modelo", help="id do anúncio que serve de molde"); s.set_defaults(fn=cmd_anuncio_drive)
+    s = sub.add_parser("anuncio-post"); comum(s); s.add_argument("--conjunto", required=True); s.add_argument("--media-id", required=True, help="id da mídia (posts.py listar)")
+    s.add_argument("--nome", required=True); s.add_argument("--modelo", help="id do anúncio que serve de molde"); s.add_argument("--mesmo-post", action="store_true", help="subir mesmo que o post já seja anúncio neste conjunto"); s.set_defaults(fn=cmd_anuncio_post)
     a = p.parse_args()
     a.fn(a)
 
