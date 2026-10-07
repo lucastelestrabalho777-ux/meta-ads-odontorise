@@ -34,6 +34,7 @@ para pessoas vão no stderr. Erro também vem em JSON, com o campo `hint` dizend
 | `alertas.py` clientes em alerta (listar), status do projeto e abrir alerta | escreve no ClickUp só com --confirmo |
 | `design.py` e `onboarding.py` acompanhamento do design e do onboarding | só leitura |
 | `dossie.py` dossiê do cliente novo para a Reunião de Onboarding (perfil, formulário de pré-onboarding, etapas, reunião, anexos) | só leitura; base de /preparar-onboarding |
+| `concorrentes/` raio-x de concorrentes: `navegador.py` (Biblioteca de Anúncios do Meta pelo Chromium, sem Apify e sem login), `coleta.py` e `gmn.py` (robôs do Apify, token pessoal com trava em `_apify.py`), `extrai.py`, `thumbs.py`, `board.py` | base de /raio-x-concorrentes; gestor nos próprios clientes, head na carteira |
 
 Ainda não existe: editar conjunto ou anúncio, duplicar, ativar por script. Quando o gestor pedir algo
 que não existe, dizer isso com clareza e oferecer o que já existe. Nunca improvisar chamadas à API por fora dos scripts.
@@ -42,7 +43,7 @@ que não existe, dizer isso com clareza e oferecer o que já existe. Nunca impro
 
 | Papel | Skills |
 |---|---|
-| Gestor | /meu-dia · /contas-criticas · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive · /radar-criativos |
+| Gestor | /meu-dia · /contas-criticas · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive · /radar-criativos · /raio-x-concorrentes |
 | Head | /contas-criticas · /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding · /preparar-onboarding · /raio-x-concorrentes |
 | CS | /agendar-reuniao · /resumo-reuniao · /suporte-grupo · /clientes-saudaveis · /monitorar-grupo |
 | Todos | /atualizar-git-odontorise (baixa a versão nova do pacote sem abrir o Terminal) |

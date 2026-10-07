@@ -3,7 +3,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/lucastelestrabalho777-ux/meta-ads-odontorise/main/instalar.sh | bash
 # Rodar de novo atualiza o pacote. O que faz: baixa (ou atualiza) o pacote em ~/.claude/skills/meta-ads-odontorise,
 # cria ~/OdontoRise (CLAUDE.md, credentials/, meta-ads/), liga cada skill em ~/.claude/skills/ e confere
-# Python e a biblioteca da Meta. Não mexe em credenciais nem em contas.
+# Python, a biblioteca da Meta e o navegador do raio-x (Playwright + Chromium). Não mexe em credenciais nem em contas.
 set -e
 REPO_URL="https://github.com/lucastelestrabalho777-ux/meta-ads-odontorise.git"
 CFG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
@@ -44,11 +44,17 @@ done
 
 PY="$(command -v python3 || true)"
 if [ -z "$PY" ]; then echo "AVISO: python3 não encontrado. Passo 3 do guia."; else
-  if ! "$PY" -c "import facebook_business" 2>/dev/null; then
-    echo "instalando a biblioteca da Meta..."
+  if ! "$PY" -c "import facebook_business, playwright" 2>/dev/null; then
+    echo "instalando a biblioteca da Meta e o Playwright (navegador do raio-x de concorrentes)..."
     "$PY" -m pip install --user -q -r "$AQUI/requirements.txt" 2>/dev/null || "$PY" -m pip install --user -q --break-system-packages -r "$AQUI/requirements.txt"
   fi
   "$PY" -c "import facebook_business; print('biblioteca da Meta ok', facebook_business.__version__)"
+  if "$PY" -c "import playwright" 2>/dev/null; then
+    echo "conferindo o Chromium do Playwright (na primeira vez baixa uns 150 MB)..."
+    "$PY" -m playwright install chromium && "$PY" -c "from importlib.metadata import version; print('navegador do raio-x ok (playwright ' + version('playwright') + ')')"
+  else
+    echo "AVISO: o Playwright não instalou; só o raio-x de concorrentes sem Apify precisa dele. No Claude, 'rode o setup da skill Meta' mostra o comando."
+  fi
 fi
 echo
 echo "Pronto. Próximos passos: credenciais (passo 6 e 8 do guia) e depois, no Claude: 'rode o setup da skill Meta'."

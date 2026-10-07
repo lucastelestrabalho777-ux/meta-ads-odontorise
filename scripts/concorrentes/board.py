@@ -11,6 +11,7 @@ referencia/config-modelo.json. Texto do documento segue referencia/tom-cliente.m
 import base64, collections, html, json, os, statistics, sys
 
 E = html.escape
+CAP_GALERIA = 24  # anúncios por clínica na galeria; o resto fica no link da Biblioteca
 
 
 def carrega(cfg_path, ads_path):
@@ -215,6 +216,9 @@ def gera(cfg, ads):
     cliente_page = cfg["pagina_cliente"]
     resumo = resumir(ads, cliente_page, cfg["perfis"])
     conc = [a for a in ads if a["page"] != cliente_page]
+    if cliente_page in cfg["perfis"] and not any(r["cliente"] for r in resumo):
+        pc = cfg["perfis"][cliente_page]
+        resumo.append(dict(nome=pc["nome"], cliente=True, n=0, reg=pc["reg"], end=pc["end"], dist=pc["dist"], pctvid=0, peg=[], maxd=0, med=0, rows=[]))
     maxn = max(r["n"] for r in resumo)
     td = f"{cfg['thumbs_dir']}/mini" if os.path.isdir(f"{cfg['thumbs_dir']}/mini") else cfg["thumbs_dir"]
     tema = collections.Counter(a["tema"] for a in conc)
@@ -284,13 +288,14 @@ def gera(cfg, ads):
              f'<h2>{E(cfg["titulos"]["galeria"])}</h2>'
              f'<p style="font-size:13.5px;color:var(--ink-2)">{cfg["notas"]["galeria"]}</p></div>')
     for r in resumo:
+        if not r["rows"]: continue
         cls = " is-client" if r["cliente"] else ""
-        peg = " · ".join(f"{k} ({v})" for k, v in r["peg"]) or "-"
+        peg = " · ".join(f"{k} ({v})" for k, v in r["peg"]) or "sem vídeo"
         P.append(f'<div class="comp{cls}"><div class="comp-head"><h3>{E(r["nome"])}</h3>'
                  f'<span class="meta">{E(r["reg"])} · {r["n"]} anúncios · {r["pctvid"]}% vídeo · '
                  f'mediana {r["med"]} dias no ar · mais antigo {r["maxd"]} dias</span></div>'
-                 f'<div class="comp-head"><span class="meta">Estilo: {E(peg)}</span></div><div class="grid">')
-        for a in r["rows"]:
+                 f'<div class="comp-head"><span class="meta">Estilo: {E(peg)}{(" · Mostrando os " + str(CAP_GALERIA) + " anúncios há mais tempo no ar, de " + str(r["n"]) + " ativos") if r["n"] > CAP_GALERIA else ""}</span></div><div class="grid">')
+        for a in r["rows"][:CAP_GALERIA]:
             b64 = img64(td, a["ad_id"])
             vis = (f'<img src="{b64}" alt="Anúncio de {E(r["nome"])}: {E(a["tema"])}" loading="lazy">'
                    if b64 else '<div class="noimg">sem capa</div>')
@@ -300,6 +305,38 @@ def gera(cfg, ads):
                      f'<span>{E(lab)} · {a["dias"]}d</span></span></a>')
         P.append("</div></div>")
     P.append("</section>")
+
+    # concorrente de outros servicos (opcional): rede fora do foco com 100+ anuncios no raio (regra de 06/10/2026)
+    if cfg.get("outros"):
+        o = cfg["outros"]; ads_o = json.load(open(o["arquivo"]))
+        rows_o = sorted(ads_o, key=lambda x: -(x["dias"] or 0))
+        dias_o = [a["dias"] for a in ads_o if a["dias"] is not None]
+        vids_o = [a for a in ads_o if a["formato"] == "VIDEO"]
+        peg_o = " · ".join(f"{k} ({v})" for k, v in collections.Counter(a["pegada"] for a in vids_o).most_common(2)) or "sem vídeo"
+        P.append(f'<section class="sec"><div class="sec-head"><span class="eyebrow">{E(o["eyebrow"])}</span>'
+                 f'<h2>{E(o["titulo"])}</h2><p style="font-size:13.5px;color:var(--ink-2)">{o["intro"]}</p></div>')
+        if o.get("kpis"):
+            P.append('<div class="kpis">')
+            for k in o["kpis"]:
+                P.append(f'<div class="kpi"><b>{E(str(k["valor"]))}</b><span>{k["texto"]}</span></div>')
+            P.append("</div>")
+        if o.get("leitura"):
+            P.append(f'<p style="font-size:14.5px;color:var(--ink-2);max-width:72ch;margin:14px 0 6px">{o["leitura"]}</p>')
+        nome_o = rows_o[0]["nome"] if rows_o else o["titulo"]
+        P.append(f'<div class="comp"><div class="comp-head"><h3>{E(nome_o)}</h3>'
+                 f'<span class="meta">{E(rows_o[0].get("reg", "") if rows_o else "")} · {E(rows_o[0].get("dist", "") if rows_o else "")} · {len(ads_o)} anúncios · {round(100*len(vids_o)/max(1,len(ads_o)))}% vídeo · '
+                 f'mediana {int(statistics.median(dias_o)) if dias_o else 0} dias no ar · mais antigo {max(dias_o) if dias_o else 0} dias</span></div>'
+                 f'<div class="comp-head"><span class="meta">Estilo: {E(peg_o)}</span></div><div class="grid">')
+        for a in rows_o[:CAP_GALERIA]:
+            b64 = img64(td, a["ad_id"])
+            vis = (f'<img src="{b64}" alt="Anúncio da {E(nome_o)}: {E(a["tema"])}" loading="lazy">' if b64 else '<div class="noimg">sem capa</div>')
+            lab = a["pegada"] if a["formato"] == "VIDEO" else a["formato"].title()
+            P.append(f'<a class="card" href="{a["link"]}" target="_blank" rel="noopener">{vis}'
+                     f'<span class="cap"><b>{E(a["tema"])}</b><span>{E(lab)} · {a["dias"]}d</span></span></a>')
+        P.append("</div></div>")
+        if o.get("nota"):
+            P.append(f'<p style="font-size:13px;color:var(--ink-2)">{o["nota"]}</p>')
+        P.append("</section>")
 
     # google meu negocio (opcional)
     if cfg.get("gmn"):

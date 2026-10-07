@@ -82,6 +82,17 @@ class Relatorio:
 # 1. Programas
 # ---------------------------------------------------------------------------
 
+def _chromium_instalado():
+    """Pasta de navegadores do Playwright com algum chromium dentro (Mac, Linux, Windows)."""
+    pastas = [os.environ.get("PLAYWRIGHT_BROWSERS_PATH"),
+              os.path.expanduser("~/Library/Caches/ms-playwright"), os.path.expanduser("~/.cache/ms-playwright"),
+              os.path.join(os.environ.get("LOCALAPPDATA", ""), "ms-playwright")]
+    for p in pastas:
+        if p and os.path.isdir(p) and any(n.startswith("chromium") for n in os.listdir(p)):
+            return True
+    return False
+
+
 def check_programas(rel):
     rel.secao("1. Programas")
     v = sys.version_info
@@ -96,6 +107,16 @@ def check_programas(rel):
     except ImportError:
         rel.falhou("programas", "biblioteca da Meta (facebook-business) não instalada",
                    f"no terminal, rodar: {CMD_SDK} (se aparecer externally-managed-environment, repita acrescentando --break-system-packages no final). Esse programa não está no passo 3 do guia, é instalado só aqui.")
+    try:
+        import playwright  # noqa: F401
+        if _chromium_instalado():
+            rel.ok("programas", "Playwright + Chromium (navegador do raio-x de concorrentes sem Apify)")
+        else:
+            rel.aviso("programas", "Playwright instalado, mas sem o Chromium (só o raio-x de concorrentes sem Apify precisa dele)",
+                      f"no terminal, rodar: {PY} -m playwright install chromium")
+    except ImportError:
+        rel.aviso("programas", "Playwright não instalado (só o raio-x de concorrentes sem Apify precisa dele)",
+                  f"no terminal, rodar: {PY} -m pip install --user playwright (se aparecer externally-managed-environment, acrescente --break-system-packages) e depois {PY} -m playwright install chromium")
     try:
         import requests
         rel.ok("programas", f"requests {requests.__version__}")

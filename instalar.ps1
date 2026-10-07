@@ -2,7 +2,7 @@
 #   irm https://raw.githubusercontent.com/lucastelestrabalho777-ux/meta-ads-odontorise/main/instalar.ps1 | iex
 # Rodar de novo atualiza o pacote.
 # Cria %USERPROFILE%\OdontoRise (CLAUDE.md, credentials, meta-ads), liga cada skill do pacote em
-# %USERPROFILE%\.claude\skills e confere Python e a biblioteca da Meta. Não mexe em credenciais nem em contas.
+# %USERPROFILE%\.claude\skills e confere Python, a biblioteca da Meta e o navegador do raio-x (Playwright + Chromium). Não mexe em credenciais nem em contas.
 $ErrorActionPreference = "Stop"
 $RepoUrl = "https://github.com/lucastelestrabalho777-ux/meta-ads-odontorise.git"
 $Cfg = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME ".claude" }
@@ -35,8 +35,14 @@ function Ligar($alvo, $nome) {
 }
 if ($Aqui -ne (Join-Path $Skills "meta-ads-odontorise")) { Ligar $Aqui "meta-ads-odontorise" }
 Get-ChildItem (Join-Path $Aqui "skills") -Directory | ForEach-Object { Ligar $_.FullName $_.Name }
-try { python -c "import facebook_business" 2>$null } catch { }
-if ($LASTEXITCODE -ne 0) { Write-Host "instalando a biblioteca da Meta..."; python -m pip install --user -q -r (Join-Path $Aqui "requirements.txt") }
+try { python -c "import facebook_business, playwright" 2>$null } catch { }
+if ($LASTEXITCODE -ne 0) { Write-Host "instalando a biblioteca da Meta e o Playwright (navegador do raio-x de concorrentes)..."; python -m pip install --user -q -r (Join-Path $Aqui "requirements.txt") }
 python -c "import facebook_business; print('biblioteca da Meta ok', facebook_business.__version__)"
+try { python -c "import playwright" 2>$null } catch { }
+if ($LASTEXITCODE -eq 0) {
+  Write-Host "conferindo o Chromium do Playwright (na primeira vez baixa uns 150 MB)..."
+  python -m playwright install chromium
+  python -c "from importlib.metadata import version; print('navegador do raio-x ok (playwright ' + version('playwright') + ')')"
+} else { Write-Host "AVISO: o Playwright nao instalou; so o raio-x de concorrentes sem Apify precisa dele. No Claude, 'rode o setup da skill Meta' mostra o comando." }
 Write-Host ""
 Write-Host "Pronto. Próximos passos: credenciais (passos 6 e 8 do guia) e depois, no Claude: 'rode o setup da skill Meta'."

@@ -66,5 +66,23 @@
     "Fonte: Biblioteca de Anúncios do Meta, coleta de <data>. Apenas anúncios ativos no dia.",
     "Critério: <especialidade> atuando em <regiões>.",
     "Distâncias aproximadas em linha reta a partir do endereço da clínica."
-  ]
+  ],
+
+  "_opcionais": "Os dois blocos abaixo são opcionais: apague o que não usar. 'outros' = rede fora do foco com 100 ou mais anúncios ativos no raio (regra de 06/10/2026), com os anúncios dela em arquivo separado (extrai.py à parte). 'gmn' = fichas do Google Meu Negócio; sem Apify, preencha 'linhas' com o que o gestor colou do Google Maps e deixe 'seguidores' vazio.",
+  "outros": {
+    "eyebrow": "Concorrente de outros serviços",
+    "titulo": "Quem pesa no leilão da região vendendo outro serviço",
+    "intro": "Uma frase: por que esta rede entra aqui e não no ranking.",
+    "arquivo": "/caminho/para/anuncios_outros.json",
+    "kpis": [{"valor": 305, "texto": "anúncios ativos<br>a 900 m da clínica"}],
+    "leitura": "Dois a três períodos: o que a rede anuncia e o que isso muda para a clínica.",
+    "nota": "Fora do ranking e das leituras do procedimento."
+  },
+  "gmn": {
+    "titulo": "Quem aparece na busca da paciente no Google",
+    "intro": "Uma frase sobre o raio e o critério da seleção.",
+    "kpis": [{"valor": 30, "texto": "fichas até 5 km"}],
+    "linhas": [{"nome": "Clínica X", "reg": "Bairro", "km": "1,2", "google": "4,9 (312)", "anuncia": true, "ig": "@perfil", "seguidores": "", "cliente": false}],
+    "notas": ["Fonte: Google Maps, consulta de <data>."]
+  }
 }
