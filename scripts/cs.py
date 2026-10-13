@@ -9,9 +9,12 @@ Uso:
                                   campos (saída grande, só para conferência).
   cs.py cliente --cliente X       contexto de um cliente (nome, parte do nome ou #código): perfil, alertas abertos,
                                   tarefas, conteúdos e reuniões (base de /suporte-grupo da CS)
+  cs.py alertas                   visão resumida da lista Clientes em Alerta: cada alerta com o cliente, o perfil, as ações,
+                                  os últimos comentários, o contexto e o que falta saber (base de /clientes-criticos da CS)
 
-Nunca lê nem devolve valores (contrato, ticket, faturamento, verba), CPF/CNPJ, telefone, e-mail, endereço,
-nascimento, descrição ou comentário de tarefa. Resultado de anúncio não está no ClickUp: quem confirma é o gestor.
+Nunca lê nem devolve valores (contrato, ticket, faturamento, verba), CPF/CNPJ, telefone, e-mail, endereço ou
+nascimento. Comentários só dos alertas (resumo interno da CS), cortados e com e-mail, telefone, CPF, CNPJ e valores
+mascarados. Resultado de anúncio não está no ClickUp: quem confirma é o gestor.
 """
 import argparse
 import collections
@@ -41,6 +44,24 @@ SATISFACAO_TOPO = ("Muito Satisfeito (Promotor)", "Embaixador da Odontorise")  #
 FASES_ONBOARDING = ("ONB1", "ONB2")
 REUNIAO_MENSAL_DIAS = 45  # última reunião mensal feita há mais que isso, sem outra agendada = atrasada
 ORDEM = ("saudavel", "quase", "cuidado", "onboarding", "sem_dado")
+
+
+_SENSIVEL = [
+    (re.compile(r"https?://\S+"), "[link]"),
+    (re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"), "[e-mail]"),
+    (re.compile(r"\b\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}\b"), "[CNPJ]"),
+    (re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b"), "[CPF]"),
+    (re.compile(r"\(?\b\d{2}\)?\s?9?\d{4}[-\s]?\d{4}\b"), "[telefone]"),
+    (re.compile(r"R\$\s?[\d.,]+"), "R$ [valor]"),
+]
+
+
+def _limpo(texto, n):
+    """Texto numa linha, com dado sensível mascarado e cortado em n caracteres."""
+    t = " ".join((texto or "").split())
+    for rx, sub in _SENSIVEL:
+        t = rx.sub(sub, t)
+    return t[:n] + ("..." if len(t) > n else "")
 
 
 def _falha(msg, acao=None):
@@ -191,6 +212,29 @@ def _ultimo_registro(tarefas):
             "ha_dias": _ha_dias(quando)}
 
 
+def _alertas_maes(tarefas):
+    """Alertas (tarefas-mãe da lista) e as ações de cada um (subtarefas)."""
+    ids = {t["id"] for t in tarefas}
+    filhas = collections.defaultdict(list)
+    for t in tarefas:
+        if t.get("parent") in ids:
+            filhas[t["parent"]].append(t)
+    return [t for t in tarefas if t.get("parent") not in ids], filhas
+
+
+def _cliente_do_alerta(t, perfis, ativos):
+    """(id do perfil, como achou): campo Alerta; senão o id no título ("Alerta - Nome [#id]"); senão o nome do título."""
+    pid = (_ligados(t, "Alerta") or [None])[0]
+    if pid:
+        return pid, "campo Alerta"
+    m = re.search(r"\[#(\w+)\]", t.get("name") or "")
+    if m and m.group(1) in perfis:
+        return m.group(1), "id no título"
+    nome = re.sub(r"^\s*alerta\s*-\s*|\[#\w+\]", "", t.get("name") or "", flags=re.I)
+    achados = [x for x in ativos if _palavras(nome) and set(_palavras(nome)) <= set(_palavras(x.get("name")))]
+    return (achados[0]["id"], "nome no título") if len(achados) == 1 else (None, None)
+
+
 def _classificar(p, alertas, em_dia, texto_reuniao):
     """Classe e motivos. Cuidado vence tudo; onboarding e satisfação vazia não entram em lista de oferta."""
     sat = p.get("satisfacao")
@@ -218,8 +262,13 @@ def _classificar(p, alertas, em_dia, texto_reuniao):
 
 
 def _montar_carteira():
-    ativos = [t for t in _ler(clickup.LISTA_PERFIL_ID) if t.get("status", {}).get("status") == "ativo"]
-    alertas = _por_cliente(_ler(clickup.LISTA_ALERTAS_ID), "Alerta")
+    perfis = {t["id"]: t for t in _ler(clickup.LISTA_PERFIL_ID)}
+    ativos = [t for t in perfis.values() if t.get("status", {}).get("status") == "ativo"]
+    alertas = collections.defaultdict(list)
+    for t in _alertas_maes(_ler(clickup.LISTA_ALERTAS_ID))[0]:
+        pid = _cliente_do_alerta(t, perfis, ativos)[0]
+        if pid:
+            alertas[pid].append(t)
     registros = _por_cliente(_ler(clickup.LISTA_TAREFAS_CLIENTES_ID, fechadas=True), "Tarefas - Clientes")
     reunioes = _por_cliente(_ler(LISTA_REUNIOES_ID), "Reunião - Clientes")
     clientes = []
@@ -238,6 +287,18 @@ def _montar_carteira():
     for c in clientes:
         if c["rede"] and marcas[c["rede"]] < 2:
             c["rede"] = None
+    # Marcas diferentes com o mesmo gestor, a mesma especialidade e a mesma reunião do mês em todas as unidades
+    # (reunião conjunta) contam como um grupo só. É conservador: a unidade em cuidado segura o grupo inteiro,
+    # e a skill pede para confirmar com o gestor se é o mesmo dono.
+    assinaturas = {}
+    for marca in sorted({c["rede"] for c in clientes if c["rede"]}):
+        chaves = {(tuple(c["gestor"] or []), c["_reuniao_do_mes"], c.get("especialidade")) for c in clientes if c["rede"] == marca}
+        if len(chaves) == 1 and next(iter(chaves))[1]:
+            assinaturas.setdefault(next(iter(chaves)), []).append(marca)
+    juntas = {m: " + ".join(ms) for ms in assinaturas.values() if len(ms) > 1 for m in ms}
+    for c in clientes:
+        if c["rede"] in juntas:
+            c["rede"] = juntas[c["rede"]]
     em_cuidado = {}
     for c in clientes:
         if c["rede"] and c["classe"] == "cuidado":
@@ -287,6 +348,9 @@ def cmd_carteira(a):
     for g in ORDEM:
         resumo[g] = sum(1 for c in clientes if c["classe"] == g)
     resumo["redes"] = sorted({c["rede"] for c in clientes if c["rede"]})
+    if any(" + " in r for r in resumo["redes"]):
+        resumo["aviso_redes"] = ("rede com '+' junta marcas com o mesmo gestor e a mesma reunião mensal: "
+                                 "confirmar com o gestor se é o mesmo dono")
     resumo["onboarding_por_gestor"] = dict(collections.Counter(
         ", ".join(_primeiros(c["gestor"])) or "sem gestor" for c in clientes if c["classe"] == "onboarding"))
     print(f"{len(clientes)} ativos: " + ", ".join(f"{g} {resumo[g]}" for g in ORDEM), file=sys.stderr)
@@ -343,12 +407,16 @@ def _resolver(chave, perfis):
 
 
 def cmd_cliente(a):
-    t = _resolver(a.cliente, _ler(clickup.LISTA_PERFIL_ID, fechadas=True))
+    todos = _ler(clickup.LISTA_PERFIL_ID, fechadas=True)
+    t = _resolver(a.cliente, todos)
     pid = t["id"]
+    perfis = {x["id"]: x for x in todos}
+    ativos = [x for x in todos if x.get("status", {}).get("status") == "ativo"]
     p = _perfil(t)
     codigo = str(p.get("codigo") or "").strip()
     no_titulo = re.compile(re.escape(codigo) + r"(?![\d.])") if codigo.startswith("#") else None
-    abertos = [_alerta(x) for x in _ler(clickup.LISTA_ALERTAS_ID) if pid in _ligados(x, "Alerta")]
+    abertos = [_alerta(x) for x in _alertas_maes(_ler(clickup.LISTA_ALERTAS_ID))[0]
+               if _cliente_do_alerta(x, perfis, ativos)[0] == pid]
     tarefas = [x for x in _ler(clickup.LISTA_TAREFAS_CLIENTES_ID, fechadas=True) if pid in _ligados(x, "Tarefas - Clientes")]
     conteudos, sem_vinculo = [], []
     for x in _ler(clickup.LISTA_CONTEUDOS_ID, fechadas=True):
@@ -389,11 +457,75 @@ def cmd_cliente(a):
     lib.print_json(saida)
 
 
+def cmd_alertas(a):
+    tarefas = _ler(clickup.LISTA_ALERTAS_ID)
+    perfis = {t["id"]: t for t in _ler(clickup.LISTA_PERFIL_ID, fechadas=True)}
+    ativos = [t for t in perfis.values() if t.get("status", {}).get("status") == "ativo"]
+    registros = _por_cliente(_ler(clickup.LISTA_TAREFAS_CLIENTES_ID, fechadas=True), "Tarefas - Clientes")
+    conteudos = _por_cliente(_ler(clickup.LISTA_CONTEUDOS_ID), "Conteúdo - Clientes")
+    reunioes = _por_cliente(_ler(LISTA_REUNIOES_ID), "Reunião - Clientes")
+    maes, filhas = _alertas_maes(tarefas)
+    itens = []
+    for t in maes:
+        pid, origem = _cliente_do_alerta(t, perfis, ativos)
+        ok, c = clickup.get(f"task/{t['id']}/comment")
+        coms = sorted(c.get("comments", []) if ok else [], key=lambda x: int(x.get("date", 0)), reverse=True)
+        mov = max([int(x.get("date_updated") or 0) for x in [t] + filhas[t["id"]]] + [int(x.get("date", 0)) for x in coms])
+        alerta = _alerta(t)
+        item = {"alerta": t.get("name"), "motivo": alerta["motivo"], "nivel": alerta["nivel"], "status": alerta["status"],
+                "com_quem": alerta["com_quem"], "aberto_ha_dias": alerta["aberto_ha_dias"], "parado_ha_dias": _ha_dias(mov),
+                "vence_em": alerta["vence_em"],
+                "descricao": _limpo(t.get("text_content") or t.get("description"), 300) or None,
+                "ultimos_comentarios": [{"quem": _primeiros([x.get("user", {}).get("username")]), "ha_dias": _ha_dias(x.get("date")),
+                                         "texto": _limpo(x.get("comment_text"), 250)} for x in coms[:2]],
+                "acoes": [{"acao": f.get("name"), "status": _status(f),
+                           "com_quem": _primeiros(y.get("username") for y in f.get("assignees", [])),
+                           "vence_em": _iso(f.get("due_date")),
+                           "atraso_dias": (HOJE - _dia(f["due_date"])).days if f.get("due_date") and _dia(f["due_date"]) < HOJE and not _fechada(f) else 0}
+                          for f in filhas[t["id"]]]}
+        falta = []
+        if pid in perfis:
+            p = _perfil(perfis[pid])
+            prox = _proxima_reuniao(reunioes.get(pid, []))
+            _, reuniao = _reuniao_mensal(p, prox)
+            reg = _ultimo_registro(registros.get(pid, []))
+            atrasados = [x for x in conteudos.get(pid, []) if _dia(x.get("due_date")) and _dia(x.get("due_date")) < HOJE]
+            item.update({"cliente": p["nome"], "codigo": p["codigo"], "cliente_achado_por": origem,
+                         "status_perfil": p["status_perfil"], "gestor": _primeiros(p["gestor"]),
+                         "lideranca": _primeiros(p["lideranca"]), "cs": _primeiros(p["cs"]),
+                         "produto": "/".join(p["produto"] or []) or None, "fase": p["fase"], "satisfacao": p["satisfacao"],
+                         "reuniao_mensal": reuniao,
+                         "ultimo_registro_gestor": f"{date.fromisoformat(reg['data']):%d/%m} {reg['tipo'] or reg['tarefa']}" if reg else "nenhum",
+                         "conteudos_atrasados": len(atrasados)})
+        else:
+            falta.append("qual é o cliente (o alerta não está ligado a um perfil)")
+        if alerta["motivo"] == "não preenchido":
+            falta.append("o motivo do alerta")
+        if not coms and not item["descricao"]:
+            falta.append("o que já foi feito (sem descrição nem comentário)")
+        if not item["acoes"] and alerta["status"] in ("em cadastro", "delegado", "em execução"):
+            falta.append("o próximo passo combinado (nenhuma ação dentro do alerta)")
+        item["falta_saber"] = falta
+        itens.append({k: v for k, v in item.items() if v not in (None, [], "")})
+    itens.sort(key=lambda x: -(x.get("parado_ha_dias") or 0))
+    resumo = {"alertas": len(itens), "parados_5_dias_ou_mais": sum(1 for i in itens if (i.get("parado_ha_dias") or 0) >= 5),
+              "por_motivo": dict(collections.Counter(i["motivo"] for i in itens)),
+              "por_status": dict(collections.Counter(i["status"] for i in itens)),
+              "com_informacao_faltando": sum(1 for i in itens if i.get("falta_saber"))}
+    print(f"{len(itens)} alerta(s), {resumo['parados_5_dias_ou_mais']} parado(s) há 5 dias ou mais", file=sys.stderr)
+    cab = {"ok": True, "hoje": HOJE.isoformat(), "fonte": "ClickUp, lista Clientes em Alerta, só leitura", "resumo": resumo,
+           "aviso": "Resumo interno da CS: alerta, satisfação e comentários nunca vão para grupo ou cliente."}
+    linhas = [json.dumps(cab, ensure_ascii=False)[:-1] + ',', '"itens": [']
+    linhas += ["  " + json.dumps(i, ensure_ascii=False) + ("," if k < len(itens) - 1 else "") for k, i in enumerate(itens)]
+    print("\n".join(linhas + ["]}"]))
+
+
 def main():
     p = argparse.ArgumentParser(description="Visão da CS no ClickUp (só leitura).")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("carteira"); s.add_argument("--completo", action="store_true"); s.set_defaults(fn=cmd_carteira)
     s = sub.add_parser("cliente"); s.add_argument("--cliente", required=True); s.set_defaults(fn=cmd_cliente)
+    s = sub.add_parser("alertas"); s.set_defaults(fn=cmd_alertas)
     a = p.parse_args()
     try:
         a.fn(a)

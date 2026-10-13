@@ -21,7 +21,8 @@ Fonte: só o ClickUp, só leitura. Não usa conta de anúncio nem a skill Meta A
      - Satisfeito: indicação.
      - `candidato_select: true` (Start com Promotor ou Embaixador): só uma linha de observação "candidatos a Select",
        nunca pedido da CS, e só depois de o gestor confirmar o resultado.
-     - Rede (campo `rede`): todas as unidades contam como um cliente só, com um pedido só, feito ao dono da rede.
+     - Rede (campo `rede`): todas as unidades contam como um cliente só, com um pedido só, feito ao dono da rede. Rede
+       com "+" juntou marcas com o mesmo gestor e a mesma reunião mensal: na mensagem ao gestor, pergunte se é o mesmo dono.
    - 🟡 Quase: o que falta, pelo campo `motivos` (reunião atrasada, no show, rede com unidade em cuidado).
    - 🔴 Cuidado: nunca oferecer nada a quem está aqui. Destaque só, como observação:
      - Insatisfeito ou Crítico sem alerta aberto (`insatisfeito_sem_alerta`): cliente, gestor, liderança. Sugestão: vale

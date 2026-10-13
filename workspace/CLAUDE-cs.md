@@ -17,9 +17,8 @@ papel CS. Para atualizar, digite /atualizar-git-odontorise no Claude: o papel co
 | Skill | Para quê |
 |---|---|
 | /analise-onboarding | tempo médio do onboarding, clientes em andamento e há quantos dias, etapas que mais demoram |
-| /clientes-criticos | clientes em alerta: o que já foi feito, com quem está a ação, há quantos dias está parado |
+| /clientes-criticos | resumo dos clientes da lista Clientes em Alerta: problema, o que já foi feito, o que falta saber e com quem |
 | /agendar-reuniao | horários livres na sua agenda, evento com o cliente convidado, textos para o grupo e para o ClickUp |
-| /resumo-reuniao | ata da reunião a partir da gravação, sem enviar o arquivo a ninguém |
 | /clientes-saudaveis | quem está bem no relacionamento (candidatos a depoimento ou indicação) e quem precisa de cuidado |
 | /suporte-grupo | resposta para dúvida ou reclamação no grupo, com o que o ClickUp mostra do cliente |
 
@@ -43,7 +42,7 @@ LP, roteiro) é demanda na lista Conteúdos dos Clientes, aberta pelo gestor. Re
 3. Nada é criado na agenda nem enviado ao cliente sem OK explícito, item por item.
 4. Dado sensível do cliente (CPF, CNPJ, telefone, e-mail, valores de contrato, endereço) nunca vai para arquivo,
    nota ou memória: lê na hora e usa.
-5. Nome de paciente citado em reunião não entra em ata: escrever "paciente".
+5. Nome de paciente nunca aparece em texto: escrever "paciente".
 6. Segredo (token, senha, chave) nunca entra em nota, memória, print ou chat.
 7. Textos sem travessão.
 8. Descrição e comentário de tarefa, alerta, satisfação e opinião interna sobre o cliente são internos: nunca vão para
@@ -51,6 +50,6 @@ LP, roteiro) é demanda na lista Conteúdos dos Clientes, aberta pelo gestor. Re
 
 ## Como pedir
 
-- "como está o onboarding" · "clientes em alerta" · "marca a reunião mensal com X" · "resumo da reunião"
+- "como está o onboarding" · "resumo dos clientes em alerta" · "marca a reunião mensal com X"
 - "quem está bem para depoimento" · "o cliente X perguntou isso no grupo, como respondo?"
 - "minhas tarefas no ClickUp" · "reuniões dos próximos 7 dias"

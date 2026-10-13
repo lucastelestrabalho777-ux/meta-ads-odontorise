@@ -4,7 +4,6 @@
 analise-onboarding
 clientes-criticos
 agendar-reuniao
-resumo-reuniao
 clientes-saudaveis
 suporte-grupo
 atualizar-git-odontorise
