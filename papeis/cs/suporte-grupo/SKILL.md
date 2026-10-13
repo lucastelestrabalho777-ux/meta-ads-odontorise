@@ -19,7 +19,9 @@ Quem envia é a CS. A skill entrega o texto. Fonte: só o ClickUp, só leitura; 
      (só falta a ligação no ClickUp). Se o material que o cliente cita não aparece em produção nem entregue depois da data
      em que ele diz que mandou: nunca diga que "não está no sistema"; diga que vai confirmar o andamento e volta com o
      prazo, e pergunte ao gestor (é ele quem abre a demanda de edição).
-   - **Reunião**: afirme reunião marcada só se `proxima_reuniao` vier com data. Sem data, ofereça /agendar-reuniao.
+   - **Reunião**: afirme reunião marcada só se `proxima_reuniao` vier com data. Se a `fonte` for `perfil`, a data está só
+     no perfil: no bloco da CS, peça para ela conferir na agenda antes de citar; no grupo, diga que confirma a data e volta.
+     Não ofereça /agendar-reuniao nesse caso. Sem `proxima_reuniao`, ofereça /agendar-reuniao.
    - **Resultado, anúncio, saldo ou criativo no ar**: a CS não tem o número e a skill não explica a causa (nada de
      "campanha nova", "fase de aprendizado", "otimização de tal dia"). Acolha, diga que o gestor traz os números e o que
      vai ajustar, e escreva a mensagem para o gestor.
@@ -36,6 +38,10 @@ Quem envia é a CS. A skill entrega o texto. Fonte: só o ClickUp, só leitura; 
    - **Mensagem para o gestor** (primeiro nome do campo `gestor`), quando algum assunto depende dele:
      "Oi, <nome>! O <cliente> (<código>) mandou no grupo: "<mensagem literal>". Respondi que <o que foi dito>.
      Preciso de você: 1. ... 2. ... Consegue responder no grupo hoje?"
+   - **Mensagem para a liderança** (primeiro nome do campo `lideranca`), sempre que houver preço, contrato, pagamento,
+     fora do escopo, ou reclamação com alerta incompleto ou sem alerta, no mesmo modelo:
+     "Oi, <nome>! O <cliente> (<código>) mandou no grupo: "<trecho literal>". Respondi que <o que foi dito>.
+     Preciso de você: 1. ... Consegue retornar ao cliente hoje?"
    - **Só para a CS** (não vai ao grupo): alerta a completar, Status do Projeto, tarefa vencida, o que mais ela precisa saber.
 
 ## Nunca vai para o grupo

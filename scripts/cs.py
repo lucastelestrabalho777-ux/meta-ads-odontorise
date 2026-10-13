@@ -37,6 +37,7 @@ HOJE = date.today()
 SATISFACAO_BOA = ("Satisfeito", "Muito Satisfeito (Promotor)", "Embaixador da Odontorise")
 SATISFACAO_RUIM = ("Neutro", "Insatisfeito (Alerta)", "Muito Insatisfeito (Crítico)")
 SATISFACAO_PIOR = ("Insatisfeito (Alerta)", "Muito Insatisfeito (Crítico)")
+SATISFACAO_TOPO = ("Muito Satisfeito (Promotor)", "Embaixador da Odontorise")  # Start + topo = candidato a Select
 FASES_ONBOARDING = ("ONB1", "ONB2")
 REUNIAO_MENSAL_DIAS = 45  # última reunião mensal feita há mais que isso, sem outra agendada = atrasada
 ORDEM = ("saudavel", "quase", "cuidado", "onboarding", "sem_dado")
@@ -163,7 +164,7 @@ def _tarefa(t, campo_tipo):
 
 def _reuniao(t):
     return {"data": _iso(t.get("due_date")), "tipo": clickup.valor(t, "Tipo de Reunião"), "status": _status(t),
-            "url": t.get("url")}
+            "fonte": "lista Reuniões com Clientes", "url": t.get("url")}
 
 
 def _por_cliente(tarefas, campo):
@@ -256,14 +257,18 @@ def _montar_carteira():
 def _linha(c):
     """Uma linha enxuta por cliente: só o que a skill usa, sem nulos nem links."""
     reg = c.get("ultimo_registro_gestor")
-    if c["classe"] in ("onboarding", "sem_dado"):
-        campos = {"cliente": c["nome"], "codigo": c["codigo"], "gestor": _primeiros(c["gestor"]), "fase": c["fase"],
-                  "produto": "/".join(c["produto"] or []) or None}
+    neutro_sem_alerta = c["classe"] == "cuidado" and not c["alertas_abertos"] and not c["insatisfeito_sem_alerta"]
+    if c["classe"] == "sem_dado" or neutro_sem_alerta:
+        campos = {"cliente": c["nome"], "codigo": c["codigo"], "gestor": _primeiros(c["gestor"]),
+                  "neutro_sem_alerta": True if neutro_sem_alerta else None}
     else:
+        produto = "/".join(c["produto"] or []) or None
         campos = {
             "cliente": c["nome"], "codigo": c["codigo"], "rede": c["rede"], "gestor": _primeiros(c["gestor"]),
-            "lideranca": _primeiros(c["lideranca"]), "produto": "/".join(c["produto"] or []) or None,
-            "satisfacao": c["satisfacao"], "meses_de_casa": c["meses_de_casa"], "reuniao_mensal": c["reuniao_mensal"],
+            "lideranca": _primeiros(c["lideranca"]) if c["classe"] == "cuidado" else None,
+            "produto": produto, "satisfacao": c["satisfacao"], "reuniao_mensal": c["reuniao_mensal"],
+            "candidato_select": True if c["classe"] == "saudavel" and produto == "Start"
+            and c["satisfacao"] in SATISFACAO_TOPO else None,
             # alerta já vem em "alertas": nos motivos fica só o resto (satisfação, reunião, rede)
             "motivos": [m for m in c["motivos"] if not (c["alertas_abertos"] and "alerta(s) aberto(s)" in m)]
             if c["classe"] != "saudavel" else None,
@@ -282,6 +287,8 @@ def cmd_carteira(a):
     for g in ORDEM:
         resumo[g] = sum(1 for c in clientes if c["classe"] == g)
     resumo["redes"] = sorted({c["rede"] for c in clientes if c["rede"]})
+    resumo["onboarding_por_gestor"] = dict(collections.Counter(
+        ", ".join(_primeiros(c["gestor"])) or "sem gestor" for c in clientes if c["classe"] == "onboarding"))
     print(f"{len(clientes)} ativos: " + ", ".join(f"{g} {resumo[g]}" for g in ORDEM), file=sys.stderr)
     cab = {"ok": True, "hoje": HOJE.isoformat(), "fonte": "ClickUp, só leitura", "resumo": resumo,
            "aviso": "Resultado de anúncio não está no ClickUp: antes de qualquer oferta, confirmar com o gestor do cliente."}
@@ -290,13 +297,17 @@ def cmd_carteira(a):
         return
     # JSON válido com um cliente por linha, saudáveis primeiro (saída curta o bastante para o Claude ler inteira).
     saida = [json.dumps(cab, ensure_ascii=False)[:-1] + ","]
-    for i, g in enumerate(ORDEM):
+    grupos = [g for g in ORDEM if g != "onboarding"]  # onboarding vai só como contagem no resumo
+    for i, g in enumerate(grupos):
         itens = [_linha(c) for c in clientes if c["classe"] == g]
         saida.append(f'"{g}": [')
         saida += ["  " + json.dumps(x, ensure_ascii=False) + ("," if k < len(itens) - 1 else "") for k, x in enumerate(itens)]
-        saida.append("]" + ("," if i < len(ORDEM) - 1 else ""))
+        saida.append("]" + ("," if i < len(grupos) - 1 else ""))
     saida.append("}")
-    print("\n".join(saida))
+    texto = "\n".join(saida)
+    if len(texto) > 28000:
+        print(f"AVISO: saída com {len(texto)} caracteres, perto do limite de leitura do Claude; enxugar _linha.", file=sys.stderr)
+    print(texto)
 
 
 def _palavras(texto):
@@ -347,6 +358,10 @@ def cmd_cliente(a):
             sem_vinculo.append(x)  # demanda com o #código no título mas sem o cliente ligado no campo
     reunioes = [x for x in _ler(LISTA_REUNIOES_ID, fechadas=True) if pid in _ligados(x, "Reunião - Clientes")]
     proxima = _proxima_reuniao(reunioes)
+    mes = p["_reuniao_do_mes"]
+    if not proxima and p.get("situacao_reuniao") == "Agendada" and mes and mes >= HOJE:
+        # sem evento na lista Reuniões com Clientes: a data vem só do perfil e precisa ser conferida na agenda
+        proxima = {"data": mes.isoformat(), "tipo": "Reunião mensal", "status": "agendada no perfil", "fonte": "perfil"}
     em_dia, p["reuniao_mensal"] = _reuniao_mensal(p, proxima)
     classe = _classificar(p, abertos, em_dia, p["reuniao_mensal"])[0] if p.get("status_perfil") == "ativo" else None
     p.pop("_ultima_mensal", None)
