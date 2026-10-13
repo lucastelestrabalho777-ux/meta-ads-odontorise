@@ -37,4 +37,5 @@ O Claude vai pedir permissão para rodar os comandos: a pessoa aprova.
 
 ## Regras
 - Só atualiza o pacote. Credenciais, cadastro de clientes, aprendizados e auditoria ficam como estão.
+- O papel da instalação (CS ou pacote completo) continua o mesmo: o instalador lê `~/OdontoRise/.papel`. Não passe papel nem argumento.
 - Sem travessão.

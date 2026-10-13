@@ -35,6 +35,24 @@ liga as skills e instala a biblioteca da Meta. Para atualizar, digite `/atualiza
 (ou rode o mesmo comando de novo).
 Passo a passo com telas: Guia de IA OdontoRise, página Onboarding, passos 4 e 5.
 
+O head usa esta mesma instalação: as skills de carteira leem as contas de anúncio.
+
+## Instalar (CS): só as skills da CS, sem Meta
+
+Mac (Terminal):
+```bash
+curl -fsSL https://raw.githubusercontent.com/lucastelestrabalho777-ux/meta-ads-odontorise/main/instalar.sh | bash -s cs
+```
+Windows (PowerShell):
+```powershell
+$env:ODR_PAPEL="cs"; irm https://raw.githubusercontent.com/lucastelestrabalho777-ux/meta-ads-odontorise/main/instalar.ps1 | iex
+```
+Liga só as skills de `papeis/cs.txt`, cria `~/OdontoRise` com o CLAUDE.md da CS (`workspace/CLAUDE-cs.md`) e não instala
+a biblioteca da Meta nem o navegador. A CS precisa só do token do ClickUp (e do Google Calendar no claude.ai).
+O papel fica gravado em `~/OdontoRise/.papel`, então `/atualizar-git-odontorise` mantém a CS. Quem já tinha o pacote
+completo e roda com `cs` tem as outras skills desligadas (o pacote não é apagado). Para voltar: `bash -s completo`
+(Windows: `$env:ODR_PAPEL="completo"`).
+
 ## Regras de segredo
 
 Token, chave secreta e senha ficam só no arquivo de credencial, com permissão 600.
