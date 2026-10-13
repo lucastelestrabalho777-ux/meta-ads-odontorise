@@ -1,7 +1,10 @@
 # Skills da CS (Customer Success): só ClickUp (leitura), agenda e gravação local; nada de conta de anúncio.
 # Uma por linha. O instalador com o papel cs liga só estas; as demais do pacote ficam desligadas.
+# Se existir papeis/cs/<nome>/, essa é a versão da CS (sem Meta) e vale no lugar de skills/<nome>/.
 analise-onboarding
 clientes-criticos
 agendar-reuniao
 resumo-reuniao
+clientes-saudaveis
+suporte-grupo
 atualizar-git-odontorise

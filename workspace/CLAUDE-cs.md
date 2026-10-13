@@ -20,9 +20,11 @@ papel CS. Para atualizar, digite /atualizar-git-odontorise no Claude: o papel co
 | /clientes-criticos | clientes em alerta: o que já foi feito, com quem está a ação, há quantos dias está parado |
 | /agendar-reuniao | horários livres na sua agenda, evento com o cliente convidado, textos para o grupo e para o ClickUp |
 | /resumo-reuniao | ata da reunião a partir da gravação, sem enviar o arquivo a ninguém |
+| /clientes-saudaveis | quem está bem no relacionamento (candidatos a depoimento, indicação, Select) e quem precisa de cuidado |
+| /suporte-grupo | resposta para dúvida ou reclamação no grupo, com o que o ClickUp mostra do cliente |
 
 Os scripts de ClickUp do pacote ficam em `~/.claude/skills/meta-ads-odontorise/scripts/` e podem ser usados
-(`tarefas.py`, `onboarding.py`, `alertas.py listar`). Para conferir a conexão com o ClickUp:
+(`cs.py`, `tarefas.py`, `onboarding.py`, `alertas.py listar`). Para conferir a conexão com o ClickUp:
 `python3 ~/.claude/skills/meta-ads-odontorise/scripts/tarefas.py minhas` (no Windows, `python`).
 
 ## Regras da casa

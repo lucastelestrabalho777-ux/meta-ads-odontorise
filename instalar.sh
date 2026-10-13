@@ -72,13 +72,15 @@ if [ "$PAPEL" = cs ]; then
   for l in "$SKILLS"/*; do
     [ -L "$l" ] || continue
     case "$(readlink "$l")" in
-      "$AQUI"/skills/*)
+      "$AQUI"/skills/*|"$AQUI"/papeis/cs/*)
         n="$(basename "$l")"
         if ! printf '%s\n' "$LISTA" | grep -qxF "$n"; then rm -f "$l"; echo "desligada: $SKILLS/$n (não é da CS)"; fi ;;
     esac
   done
   for n in $LISTA; do
-    if [ -d "$AQUI/skills/$n" ]; then ln -sfn "$AQUI/skills/$n" "$SKILLS/$n"; echo "ligada: $SKILLS/$n"
+    # versão da CS (papeis/cs/<nome>, sem Meta) quando existe; senão a skill do pacote
+    if [ -d "$AQUI/papeis/cs/$n" ]; then ORIGEM="$AQUI/papeis/cs/$n"; else ORIGEM="$AQUI/skills/$n"; fi
+    if [ -d "$ORIGEM" ]; then ln -sfn "$ORIGEM" "$SKILLS/$n"; echo "ligada: $SKILLS/$n"
     else echo "AVISO: a skill $n da lista da CS não existe no pacote"; fi
   done
 else

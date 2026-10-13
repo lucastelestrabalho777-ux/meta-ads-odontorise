@@ -67,17 +67,20 @@ if ($Aqui -ne (Join-Path $Skills "meta-ads-odontorise")) { Ligar $Aqui "meta-ads
 if ($Papel -eq "cs") {
   $Lista = @(Get-Content -LiteralPath (Join-Path $Aqui "papeis\cs.txt") -Encoding UTF8 | ForEach-Object { $_.Trim() } | Where-Object { $_ -and -not $_.StartsWith("#") })
   $PastaSkills = (Join-Path $Aqui "skills") + [System.IO.Path]::DirectorySeparatorChar
+  $PastaCs = (Join-Path $Aqui "papeis\cs") + [System.IO.Path]::DirectorySeparatorChar
   # Instalação completa anterior: desliga as skills do pacote que não são da CS (só atalhos para dentro do pacote).
   # Directory.Delete sem recursão apaga só o atalho, nunca o conteúdo da skill no pacote.
   foreach ($item in @(Get-ChildItem -LiteralPath $Skills -Force -Directory)) {
     $alvo = AlvoDoAtalho $item.FullName
-    if ($alvo -and $alvo.StartsWith($PastaSkills, [System.StringComparison]::OrdinalIgnoreCase) -and ($Lista -notcontains $item.Name)) {
+    $doPacote = $alvo -and ($alvo.StartsWith($PastaSkills, [System.StringComparison]::OrdinalIgnoreCase) -or $alvo.StartsWith($PastaCs, [System.StringComparison]::OrdinalIgnoreCase))
+    if ($doPacote -and ($Lista -notcontains $item.Name)) {
       [System.IO.Directory]::Delete($item.FullName)
       Write-Host "desligada: $($item.FullName) (nao e da CS)"
     }
   }
   foreach ($n in $Lista) {
-    $alvo = Join-Path $Aqui "skills\$n"
+    # versão da CS (papeis\cs\<nome>, sem Meta) quando existe; senão a skill do pacote
+    $alvo = if (Test-Path (Join-Path $Aqui "papeis\cs\$n")) { Join-Path $Aqui "papeis\cs\$n" } else { Join-Path $Aqui "skills\$n" }
     if (-not (Test-Path $alvo)) { Write-Host "AVISO: a skill $n da lista da CS nao existe no pacote"; continue }
     $dest = Join-Path $Skills $n
     if ((Test-Path $dest) -and ((AlvoDoAtalho $dest) -ne (Get-Item -LiteralPath $alvo).FullName)) { [System.IO.Directory]::Delete($dest) }
@@ -91,6 +94,12 @@ if ($Papel -eq "cs") {
   Write-Host ""
   Write-Host "Pronto. Proximos passos: o token do ClickUp (passo 8 do guia) e depois, no Claude: 'minhas tarefas no ClickUp'."
 } else {
+  # Quem era CS e volta ao pacote completo: apaga só os atalhos das versões da CS (o conteúdo fica no pacote).
+  $PastaCs = (Join-Path $Aqui "papeis\cs") + [System.IO.Path]::DirectorySeparatorChar
+  foreach ($item in @(Get-ChildItem -LiteralPath $Skills -Force -Directory)) {
+    $alvo = AlvoDoAtalho $item.FullName
+    if ($alvo -and $alvo.StartsWith($PastaCs, [System.StringComparison]::OrdinalIgnoreCase)) { [System.IO.Directory]::Delete($item.FullName) }
+  }
   Get-ChildItem (Join-Path $Aqui "skills") -Directory | ForEach-Object { Ligar $_.FullName $_.Name }
   try { python -c "import facebook_business, playwright" 2>$null } catch { }
   if ($LASTEXITCODE -ne 0) { Write-Host "instalando a biblioteca da Meta e o Playwright (navegador do raio-x de concorrentes)..."; python -m pip install --user -q -r (Join-Path $Aqui "requirements.txt") }
