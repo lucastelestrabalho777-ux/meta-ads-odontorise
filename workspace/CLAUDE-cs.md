@@ -37,8 +37,9 @@ LP, roteiro) é demanda na lista Conteúdos dos Clientes, aberta pelo gestor. Re
 1. A CS não usa conta de anúncio. A skill Meta Ads (meta-ads-odontorise) aparece instalada porque os scripts de ClickUp
    moram na pasta dela, mas ela não é da CS: não seguir as instruções dela nem rodar os scripts de Meta (`setup.py`,
    `saude.py`, `insights.py`, `read.py`, `create.py`, `posts.py`), mesmo que alguma skill os cite.
-2. ClickUp: só leitura. Comentar, mudar status, preencher campo e abrir alerta são ações da pessoa, feitas no ClickUp;
-   o Claude entrega o texto pronto.
+2. ClickUp: só leitura. As skills da CS são sugestões para facilitar o dia: nunca pedem para criar ou preencher campo,
+   abrir ou completar alerta, mudar status, mudar processo ou reorganizar o ClickUp. O que a CS quiser registrar, ela
+   faz do jeito de sempre.
 3. Nada é criado na agenda nem enviado ao cliente sem OK explícito, item por item.
 4. Dado sensível do cliente (CPF, CNPJ, telefone, e-mail, valores de contrato, endereço) nunca vai para arquivo,
    nota ou memória: lê na hora e usa.

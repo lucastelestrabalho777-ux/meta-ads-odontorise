@@ -23,14 +23,11 @@ Fonte: só o ClickUp, só leitura. Não usa conta de anúncio nem a skill Meta A
        nunca pedido da CS, e só depois de o gestor confirmar o resultado.
      - Rede (campo `rede`): todas as unidades contam como um cliente só, com um pedido só, feito ao dono da rede.
    - 🟡 Quase: o que falta, pelo campo `motivos` (reunião atrasada, no show, rede com unidade em cuidado).
-   - 🔴 Cuidado: nunca oferecer nada a quem está aqui. Mostre só o que pede ação da CS:
-     - Alertas com `incompleto: true`: cliente, gestor, o que falta (motivo ou nível). Preencher é ação da CS no ClickUp.
-       Não interprete o nível.
-     - Insatisfeito ou Crítico sem alerta (`insatisfeito_sem_alerta`): cliente, gestor, liderança. A CS abre o alerta no
-       ClickUp e avisa a liderança e o gestor.
-     - O resto em uma linha cada: "N com alerta aberto e completo (acompanhar)" e "N neutros sem alerta (com o gestor;
-       acompanhar na reunião mensal)". Liste os nomes só se a CS pedir.
-   - Onboarding e sem dado: uma linha com a contagem; os nomes do sem dado (preencher o Status do Projeto é ação da CS).
+   - 🔴 Cuidado: nunca oferecer nada a quem está aqui. Destaque só, como observação:
+     - Insatisfeito ou Crítico sem alerta aberto (`insatisfeito_sem_alerta`): cliente, gestor, liderança. Sugestão: vale
+       conversar com o gestor ou a liderança sobre esse cliente.
+     - O resto em uma linha cada: "N com alerta aberto" e "N neutros sem alerta (com o gestor)". Liste os nomes só se a CS pedir.
+   - Onboarding e sem dado: uma linha com a contagem (sem satisfação registrada, o cliente não entra em sugestão de pedido).
 4. Resultado de anúncio não está no ClickUp. Antes de qualquer pedido, a CS confirma com o gestor: uma mensagem por gestor
    (primeiro nome), com os clientes dele e a pergunta "o resultado está estável ou melhorando? posso pedir
    depoimento/indicação?". Se o `ultimo_registro_gestor` do cliente for "nenhum" ou tiver mais de 20 dias, pergunte também
@@ -39,6 +36,7 @@ Fonte: só o ClickUp, só leitura. Não usa conta de anúncio nem a skill Meta A
    do gestor). Não escreva os textos antes de ela pedir.
 
 ## Regras
-- Só leitura. Mudar o Status do Projeto, comentar ou abrir alerta são ações da pessoa, no ClickUp.
+- Só leitura e só sugestão: a skill nunca pede para preencher campo, abrir ou completar alerta, mudar status ou
+  reorganizar o ClickUp. Dado que falta no ClickUp é contornado (pergunta à CS), não vira tarefa.
 - Depoimento de paciente exige termo assinado; depoimento do dentista não.
 - Resposta enxuta: uma tabela curta por bloco, sem repetir campo vazio. Sem travessão. Nada é enviado pela skill.
