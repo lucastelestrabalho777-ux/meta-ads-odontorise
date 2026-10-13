@@ -91,7 +91,14 @@ fi
 
 PY="$(command -v python3 || true)"
 if [ -z "$PY" ]; then echo "AVISO: python3 não encontrado. Passo 3 do guia."
-elif [ "$PAPEL" = cs ]; then echo "Python ok ($("$PY" --version 2>&1)). A CS não usa a biblioteca da Meta nem o navegador: nada a instalar."
+elif [ "$PAPEL" = cs ]; then
+  # A CS só precisa do requests (conexão com o ClickUp); sem biblioteca da Meta e sem navegador.
+  if ! "$PY" -c "import requests" 2>/dev/null; then
+    echo "instalando o requests (conexão com o ClickUp)..."
+    "$PY" -m pip install --user -q requests 2>/dev/null || "$PY" -m pip install --user -q --break-system-packages requests
+  fi
+  "$PY" -c "import requests; print('conexão com o ClickUp ok (requests ' + requests.__version__ + ')')"
+  echo "A CS não usa a biblioteca da Meta nem o navegador."
 else
   if ! "$PY" -c "import facebook_business, playwright" 2>/dev/null; then
     echo "instalando a biblioteca da Meta e o Playwright (navegador do raio-x de concorrentes)..."

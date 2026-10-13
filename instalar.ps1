@@ -87,10 +87,15 @@ if ($Papel -eq "cs") {
     if (-not (Test-Path $dest)) { New-Item -ItemType Junction -Path $dest -Target $alvo | Out-Null }
     Write-Host "ligada: $dest"
   }
+  # A CS so precisa do requests (conexao com o ClickUp); sem biblioteca da Meta e sem navegador.
   $Py = $null
   try { $Py = python --version 2>&1 } catch { }
-  if ($Py -and $LASTEXITCODE -eq 0) { Write-Host "Python ok ($Py). A CS nao usa a biblioteca da Meta nem o navegador: nada a instalar." }
-  else { Write-Host "AVISO: python nao encontrado. Passo 3 do guia." }
+  if ($Py -and $LASTEXITCODE -eq 0) {
+    try { python -c "import requests" 2>$null } catch { }
+    if ($LASTEXITCODE -ne 0) { Write-Host "instalando o requests (conexao com o ClickUp)..."; python -m pip install --user -q requests }
+    python -c "import requests; print('conexao com o ClickUp ok (requests ' + requests.__version__ + ')')"
+    Write-Host "A CS nao usa a biblioteca da Meta nem o navegador."
+  } else { Write-Host "AVISO: python nao encontrado. Passo 3 do guia." }
   Write-Host ""
   Write-Host "Pronto. Proximos passos: o token do ClickUp (passo 8 do guia) e depois, no Claude: 'minhas tarefas no ClickUp'."
 } else {
