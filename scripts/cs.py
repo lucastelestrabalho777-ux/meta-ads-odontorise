@@ -48,6 +48,8 @@ ORDEM = ("saudavel", "quase", "cuidado", "onboarding", "sem_dado")
 
 _SENSIVEL = [
     (re.compile(r"https?://\S+"), "[link]"),
+    (re.compile(r"\b(?:www\.)?[\w-]+(?:\.[\w-]+)*\.(?:com|br|io|app|net|org)(?:/\S*)?", re.I), "[link]"),
+    (re.compile(r"\b[\w-]+\.(?:png|jpe?g|gif|webp|pdf)\b", re.I), ""),
     (re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"), "[e-mail]"),
     (re.compile(r"\b\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}\b"), "[CNPJ]"),
     (re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b"), "[CPF]"),
@@ -458,6 +460,8 @@ def cmd_cliente(a):
 
 
 def cmd_alertas(a):
+    _, voce = clickup.quem_sou()  # quem roda a skill: nunca vira sugestão de "com quem conversar"
+    voce = (voce or "").split()[0] if voce else None
     tarefas = _ler(clickup.LISTA_ALERTAS_ID)
     perfis = {t["id"]: t for t in _ler(clickup.LISTA_PERFIL_ID, fechadas=True)}
     ativos = [t for t in perfis.values() if t.get("status", {}).get("status") == "ativo"]
@@ -472,12 +476,16 @@ def cmd_alertas(a):
         coms = sorted(c.get("comments", []) if ok else [], key=lambda x: int(x.get("date", 0)), reverse=True)
         mov = max([int(x.get("date_updated") or 0) for x in [t] + filhas[t["id"]]] + [int(x.get("date", 0)) for x in coms])
         alerta = _alerta(t)
-        item = {"alerta": t.get("name"), "motivo": alerta["motivo"], "nivel": alerta["nivel"], "status": alerta["status"],
-                "com_quem": alerta["com_quem"], "aberto_ha_dias": alerta["aberto_ha_dias"], "parado_ha_dias": _ha_dias(mov),
-                "vence_em": alerta["vence_em"],
+        churn = alerta["status"] == "churn"
+        motivo = alerta["motivo"] if alerta["motivo"] != "não preenchido" else "sem motivo marcado"
+        item = {"alerta": t.get("name"), "url": t.get("url"), "churn": True if churn else None,
+                "motivo": motivo, "nivel": alerta["nivel"], "status": alerta["status"],
+                "com_quem": [n for n in alerta["com_quem"] if n != voce] or None,
+                "aberto_ha_dias": alerta["aberto_ha_dias"], "parado_ha_dias": _ha_dias(mov), "vence_em": alerta["vence_em"],
                 "descricao": _limpo(t.get("text_content") or t.get("description"), 300) or None,
+                # o comentário mais recente vai quase inteiro (traz contexto e próximos passos); o anterior, curto
                 "ultimos_comentarios": [{"quem": _primeiros([x.get("user", {}).get("username")]), "ha_dias": _ha_dias(x.get("date")),
-                                         "texto": _limpo(x.get("comment_text"), 250)} for x in coms[:2]],
+                                         "texto": _limpo(x.get("comment_text"), 600 if k == 0 else 250)} for k, x in enumerate(coms[:2])],
                 "acoes": [{"acao": f.get("name"), "status": _status(f),
                            "com_quem": _primeiros(y.get("username") for y in f.get("assignees", [])),
                            "vence_em": _iso(f.get("due_date")),
@@ -499,21 +507,24 @@ def cmd_alertas(a):
                          "conteudos_atrasados": len(atrasados)})
         else:
             falta.append("qual é o cliente (o alerta não está ligado a um perfil)")
-        if alerta["motivo"] == "não preenchido":
-            falta.append("o motivo do alerta")
-        if not coms and not item["descricao"]:
-            falta.append("o que já foi feito (sem descrição nem comentário)")
-        if not item["acoes"] and alerta["status"] in ("em cadastro", "delegado", "em execução"):
-            falta.append("o próximo passo combinado (nenhuma ação dentro do alerta)")
+        escrito = bool(coms or item["descricao"])
+        if not churn:  # cliente em churn já saiu: nada a perguntar
+            if not escrito:
+                falta.append("o que aconteceu e o que já foi feito (nada escrito no alerta)")
+            if not item["acoes"] and not escrito and alerta["status"] in ("em cadastro", "delegado", "em execução"):
+                falta.append("o próximo passo combinado")
         item["falta_saber"] = falta
         itens.append({k: v for k, v in item.items() if v not in (None, [], "")})
-    itens.sort(key=lambda x: -(x.get("parado_ha_dias") or 0))
-    resumo = {"alertas": len(itens), "parados_5_dias_ou_mais": sum(1 for i in itens if (i.get("parado_ha_dias") or 0) >= 5),
+    itens.sort(key=lambda x: (bool(x.get("churn")), -(x.get("parado_ha_dias") or 0)))
+    ativos_alerta = [i for i in itens if not i.get("churn")]
+    resumo = {"alertas": len(itens), "em_churn": len(itens) - len(ativos_alerta),
+              "parados_5_dias_ou_mais_fora_do_churn": sum(1 for i in ativos_alerta if (i.get("parado_ha_dias") or 0) >= 5),
               "por_motivo": dict(collections.Counter(i["motivo"] for i in itens)),
               "por_status": dict(collections.Counter(i["status"] for i in itens)),
               "com_informacao_faltando": sum(1 for i in itens if i.get("falta_saber"))}
-    print(f"{len(itens)} alerta(s), {resumo['parados_5_dias_ou_mais']} parado(s) há 5 dias ou mais", file=sys.stderr)
-    cab = {"ok": True, "hoje": HOJE.isoformat(), "fonte": "ClickUp, lista Clientes em Alerta, só leitura", "resumo": resumo,
+    print(f"{len(itens)} alerta(s), {resumo['em_churn']} em churn, {resumo['parados_5_dias_ou_mais_fora_do_churn']} "
+          "parado(s) há 5 dias ou mais fora do churn", file=sys.stderr)
+    cab = {"ok": True, "hoje": HOJE.isoformat(), "voce": voce, "fonte": "ClickUp, lista Clientes em Alerta, só leitura", "resumo": resumo,
            "aviso": "Resumo interno da CS: alerta, satisfação e comentários nunca vão para grupo ou cliente."}
     linhas = [json.dumps(cab, ensure_ascii=False)[:-1] + ',', '"itens": [']
     linhas += ["  " + json.dumps(i, ensure_ascii=False) + ("," if k < len(itens) - 1 else "") for k, i in enumerate(itens)]
