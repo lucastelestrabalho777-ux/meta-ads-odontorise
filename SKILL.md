@@ -43,10 +43,14 @@ que não existe, dizer isso com clareza e oferecer o que já existe. Nunca impro
 
 | Papel | Skills |
 |---|---|
-| Gestor | /meu-dia · /contas-criticas · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive · /radar-criativos · /raio-x-concorrentes |
-| Head | /contas-criticas · /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding · /preparar-onboarding · /raio-x-concorrentes |
+| Gestor | /meu-dia · /contas-criticas · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive · /radar-criativos · /raio-x-concorrentes · /tempo-de-resposta · /sem-agendamento · /funil-comercial · /campanhas-que-convertem |
+| Head | /contas-criticas · /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding · /preparar-onboarding · /raio-x-concorrentes · /tempo-de-resposta · /sem-agendamento · /funil-comercial · /campanhas-que-convertem |
 | CS | /agendar-reuniao · /resumo-reuniao · /suporte-grupo · /clientes-saudaveis · /monitorar-grupo |
 | Todos | /atualizar-git-odontorise (baixa a versão nova do pacote sem abrir o Terminal) |
+
+As quatro skills do Metrics (/tempo-de-resposta, /sem-agendamento, /funil-comercial, /campanhas-que-convertem) leem o
+MCP do Metrics (atendimento, agendamento e vendas da clínica), conectado por cada pessoa com o próprio login: passo
+"Conectar o Metrics" do guia.
 
 Cada uma tem o próprio SKILL.md com os dados que usa (sempre os scripts desta skill) e o formato da entrega.
 O instalador (`instalar.sh` / `instalar.ps1`) liga todas em `~/.claude/skills/`.
