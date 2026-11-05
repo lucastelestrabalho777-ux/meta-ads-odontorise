@@ -3,8 +3,8 @@
 meta-ads-odontorise: conferência do ambiente.
 
 Roda depois do passo 6 do guia e sempre que algo parar de funcionar.
-Confere programas, arquivo de credencial, validade do token, conexão com a Meta
-e quantas contas de anúncio a pessoa enxerga. Não altera nada.
+Confere programas, arquivo de credencial, validade do token, conexão com a Meta,
+quantas contas de anúncio a pessoa enxerga e a credencial do Google Ads (passo 7). Não altera nada.
 
 Uso:
   python3 scripts/setup.py          saída para pessoas (no Windows: python)
@@ -15,6 +15,7 @@ Códigos de saída: 0 tudo pronto · 1 há pendência · 2 erro interno
 
 import json
 import os
+import subprocess
 import sys
 
 for _s in (sys.stdout, sys.stderr):
@@ -39,6 +40,9 @@ PERMISSOES_ESPERADAS = [
 GUIA = lib.ONDE_GUIA            # "Guia de IA OdontoRise, página Onboarding, passo 6"
 BM_ODONTORISE = "666777657534959"
 CADASTRO = os.path.expanduser("~/OdontoRise/meta-ads/contas-odontorise.json")
+GUIA_GOOGLE = "Guia de IA OdontoRise, página Onboarding, passo 7"
+GOOGLE_YAML = os.path.join(os.environ.get("ODONTORISE_HOME") or os.path.expanduser("~/OdontoRise"), "credentials", "google-ads-odontorise.yaml")
+GOOGLE_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "google", "conectar.py")
 PY = os.path.basename(sys.executable) or "python3"
 CMD_SDK = f"{PY} -m pip install --user facebook-business=={SDK_VERSAO}"
 
@@ -316,6 +320,36 @@ def check_cadastro(rel):
                   f"apagar o arquivo {CADASTRO} e pedir ao Claude: monte o cadastro de clientes de novo a partir do ClickUp")
 
 
+def check_google(rel):
+    """Seção 6: Google Ads (passo 7 do guia). Não bloqueia quem ainda só usa o Meta."""
+    rel.secao("6. Google Ads (passo 7 do guia)")
+    if not os.path.isfile(GOOGLE_YAML):
+        rel.aviso("google", "Google Ads ainda não conectado (normal se você ainda não fez o passo 7)",
+                  f"seguir o {GUIA_GOOGLE}: o administrador coloca o seu e-mail no MCC e você roda o conectar.py")
+        return None
+    rel.ok("google", f"credencial encontrada: {GOOGLE_YAML}")
+    status, texto = lib.checar_permissao(GOOGLE_YAML)
+    if status == "ok":
+        rel.ok("google", texto)
+    elif status == "nao_verificado":
+        rel.aviso("google", texto, "manter o arquivo dentro da sua pasta de usuário, fora de pastas compartilhadas ou sincronizadas")
+    else:
+        rel.falhou("google", texto, f"no terminal, rodar: chmod 600 {GOOGLE_YAML}")
+    try:
+        out = subprocess.run([sys.executable, GOOGLE_SCRIPT, "--testar", "--json"],
+                             capture_output=True, text=True, timeout=120)
+        dados = json.loads(out.stdout.strip())
+    except (subprocess.SubprocessError, ValueError, OSError):
+        rel.falhou("google", "não consegui testar a conexão com o Google Ads",
+                   f"no terminal, rodar: {PY} {GOOGLE_SCRIPT} --testar")
+        return None
+    if dados.get("ok"):
+        rel.ok("google", f"MCC {dados.get('mcc_nome')} ({dados.get('mcc')}): {len(dados.get('contas', []))} conta(s) de cliente ativas")
+    else:
+        rel.falhou("google", dados.get("erro", "conexão com o Google Ads falhou"), dados.get("acao"))
+    return dados
+
+
 # ---------------------------------------------------------------------------
 
 def main():
@@ -324,11 +358,12 @@ def main():
     if not como_json:
         print("=" * 56)
         print("Conferência do ambiente Meta Ads (OdontoRise)")
-        print("Confere programas, credencial, token, conexão e cadastro. Não altera nada.")
+        print("Confere programas, credencial, token, conexão, cadastro e Google Ads. Não altera nada.")
         print("=" * 56)
 
     token = None
     conexao = None
+    google = None
     try:
         tem_requests = check_programas(rel)
         creds = check_credencial(rel)
@@ -345,6 +380,7 @@ def main():
             rel.secao("4. Conexão com a Meta")
             rel.pulado("conexao", "não conferido: depende do token")
         check_cadastro(rel)
+        google = check_google(rel)
     except Exception as e:  # nunca imprimir str(e): pode carregar URL com token
         nome = type(e).__name__
         if como_json:
@@ -362,6 +398,7 @@ def main():
             "itens": rel.itens,
             "token": {k: v for k, v in (token or {}).items() if k != "permissoes"},
             "conexao": conexao,
+            "google": google,
             "graph_version": lib.GRAPH_VERSION,
         }, ensure_ascii=False, indent=2))
     else:

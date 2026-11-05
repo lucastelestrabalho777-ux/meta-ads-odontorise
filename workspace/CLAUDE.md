@@ -7,7 +7,7 @@ qualquer coisa ao Claude: é daqui que ele lê as regras da casa e encontra as s
 
 | Caminho | O que é |
 |---|---|
-| `credentials/` | só os seus arquivos de credencial (Meta, ClickUp). Nunca compartilhada, nunca enviada. |
+| `credentials/` | só os seus arquivos de credencial (Meta, Google Ads, ClickUp). Nunca compartilhada, nunca enviada. |
 | `meta-ads/` | seu cadastro de clientes, seus aprendizados e o log de auditoria; a skill cria e mantém |
 
 As skills (Meta Ads, cadastro, tarefas, legenda, reunião) vivem em `~/.claude/skills/` e chegam pelo
@@ -26,7 +26,14 @@ repositório do GitHub da agência. Para atualizar, digite /atualizar-git-odonto
 9. Roteiro escrito para cliente: no fim, oferecer registrar no ClickUp (/registrar-otimizacao, tarefa "Roteiro").
 10. Cada pessoa só lê e opera as contas dos clientes que cuida (o cadastro local, vindo do ClickUp). Conta de outro gestor: nem ler, nem cadastrar. O head cadastra a carteira inteira.
 
+## Google Ads (desde 05/11/2026)
+
+A credencial `credentials/google-ads-odontorise.yaml` dá acesso às contas de cliente do MCC Odontorise `4820610378`
+pela biblioteca `google-ads` (Python). Leitura é livre nas contas do seu cadastro; qualquer alteração (pausar, orçamento,
+lance, palavra, anúncio) só com OK explícito, item por item. Cota compartilhada pela agência toda: 2.880 operações por dia
+(1 por consulta, 1 por alteração individual). Conectar ou testar: `python3 ~/.claude/skills/meta-ads-odontorise/scripts/google/conectar.py --testar`.
+
 ## Como pedir
 
 - "rode o setup da skill Meta" · "cadastra o cliente X" · "resultado da conta X nos últimos 7 dias"
-- "compara as janelas dos anúncios da X" · "saúde da conta X" · "contas críticas" · "radar de criativos do X" · "meu dia" · "legenda para esse vídeo"
+- "campanhas Google do cliente X nos últimos 7 dias" · "compara as janelas dos anúncios da X" · "saúde da conta X" · "contas críticas" · "radar de criativos do X" · "meu dia" · "legenda para esse vídeo"

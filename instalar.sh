@@ -5,7 +5,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/lucastelestrabalho777-ux/meta-ads-odontorise/main/instalar.sh | bash -s cs
 # Rodar de novo atualiza o pacote. O que faz: baixa (ou atualiza) o pacote em ~/.claude/skills/meta-ads-odontorise,
 # cria ~/OdontoRise (CLAUDE.md, credentials/, meta-ads/), liga cada skill em ~/.claude/skills/ e confere
-# Python, a biblioteca da Meta e o navegador do raio-x (Playwright + Chromium). Não mexe em credenciais nem em contas.
+# Python, as bibliotecas da Meta e do Google Ads e o navegador do raio-x (Playwright + Chromium). Não mexe em credenciais nem em contas.
 # Papel: sem argumento, o pacote completo (gestor e head). "cs" liga só as skills de papeis/cs.txt, usa o CLAUDE.md
 # da CS e não instala a biblioteca da Meta nem o navegador. O papel fica em ~/OdontoRise/.papel e vale nas
 # atualizações (/atualizar-git-odontorise roda este instalador sem argumento); "completo" volta ao pacote inteiro.
@@ -100,11 +100,12 @@ elif [ "$PAPEL" = cs ]; then
   "$PY" -c "import requests; print('conexão com o ClickUp ok (requests ' + requests.__version__ + ')')"
   echo "A CS não usa a biblioteca da Meta nem o navegador."
 else
-  if ! "$PY" -c "import facebook_business, playwright" 2>/dev/null; then
-    echo "instalando a biblioteca da Meta e o Playwright (navegador do raio-x de concorrentes)..."
+  if ! "$PY" -c "import facebook_business, playwright, google.ads.googleads" 2>/dev/null; then
+    echo "instalando as bibliotecas da Meta e do Google Ads e o Playwright (navegador do raio-x de concorrentes)..."
     "$PY" -m pip install --user -q -r "$AQUI/requirements.txt" 2>/dev/null || "$PY" -m pip install --user -q --break-system-packages -r "$AQUI/requirements.txt"
   fi
   "$PY" -c "import facebook_business; print('biblioteca da Meta ok', facebook_business.__version__)"
+  "$PY" -c "from importlib.metadata import version; import google.ads.googleads; print('biblioteca do Google Ads ok', version('google-ads'))" 2>/dev/null || echo "AVISO: a biblioteca do Google Ads não instalou; só o passo 7 do guia precisa dela. Comando: $PY -m pip install --user google-ads"
   if "$PY" -c "import playwright" 2>/dev/null; then
     echo "conferindo o Chromium do Playwright (na primeira vez baixa uns 150 MB)..."
     "$PY" -m playwright install chromium && "$PY" -c "from importlib.metadata import version; print('navegador do raio-x ok (playwright ' + version('playwright') + ')')"
@@ -116,5 +117,5 @@ echo
 if [ "$PAPEL" = cs ]; then
   echo "Pronto. Próximos passos: o token do ClickUp (passo 8 do guia) e depois, no Claude: 'minhas tarefas no ClickUp'."
 else
-  echo "Pronto. Próximos passos: credenciais (passo 6 e 8 do guia) e depois, no Claude: 'rode o setup da skill Meta'."
+  echo "Pronto. Próximos passos: credenciais (passos 6, 7 e 8 do guia) e depois, no Claude: 'rode o setup da skill Meta'."
 fi

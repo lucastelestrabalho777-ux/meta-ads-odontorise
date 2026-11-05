@@ -106,9 +106,10 @@ if ($Papel -eq "cs") {
     if ($alvo -and $alvo.StartsWith($PastaCs, [System.StringComparison]::OrdinalIgnoreCase)) { [System.IO.Directory]::Delete($item.FullName) }
   }
   Get-ChildItem (Join-Path $Aqui "skills") -Directory | ForEach-Object { Ligar $_.FullName $_.Name }
-  try { python -c "import facebook_business, playwright" 2>$null } catch { }
-  if ($LASTEXITCODE -ne 0) { Write-Host "instalando a biblioteca da Meta e o Playwright (navegador do raio-x de concorrentes)..."; python -m pip install --user -q -r (Join-Path $Aqui "requirements.txt") }
+  try { python -c "import facebook_business, playwright, google.ads.googleads" 2>$null } catch { }
+  if ($LASTEXITCODE -ne 0) { Write-Host "instalando as bibliotecas da Meta e do Google Ads e o Playwright (navegador do raio-x de concorrentes)..."; python -m pip install --user -q -r (Join-Path $Aqui "requirements.txt") }
   python -c "import facebook_business; print('biblioteca da Meta ok', facebook_business.__version__)"
+  try { python -c "from importlib.metadata import version; import google.ads.googleads; print('biblioteca do Google Ads ok', version('google-ads'))" 2>$null } catch { Write-Host 'AVISO: a biblioteca do Google Ads nao instalou; so o passo 7 do guia precisa dela. Comando: python -m pip install --user google-ads' }
   try { python -c "import playwright" 2>$null } catch { }
   if ($LASTEXITCODE -eq 0) {
     Write-Host "conferindo o Chromium do Playwright (na primeira vez baixa uns 150 MB)..."
@@ -116,5 +117,5 @@ if ($Papel -eq "cs") {
     python -c "from importlib.metadata import version; print('navegador do raio-x ok (playwright ' + version('playwright') + ')')"
   } else { Write-Host "AVISO: o Playwright nao instalou; so o raio-x de concorrentes sem Apify precisa dele. No Claude, 'rode o setup da skill Meta' mostra o comando." }
   Write-Host ""
-  Write-Host "Pronto. Próximos passos: credenciais (passos 6 e 8 do guia) e depois, no Claude: 'rode o setup da skill Meta'."
+  Write-Host "Pronto. Próximos passos: credenciais (passos 6, 7 e 8 do guia) e depois, no Claude: 'rode o setup da skill Meta'."
 }

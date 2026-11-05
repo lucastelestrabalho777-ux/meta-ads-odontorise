@@ -61,10 +61,11 @@ O instalador (`instalar.sh` / `instalar.ps1`) liga todas em `~/.claude/skills/`.
 |---|---|
 | Credencial do Meta (app próprio, token de 60 dias) | `~/OdontoRise/credentials/meta-odontorise.env` |
 | Token pessoal do ClickUp | `~/OdontoRise/credentials/clickup-odontorise.env` |
+| Credencial do Google Ads (autorização sua no app da OdontoRise, MCC 4820610378) | `~/OdontoRise/credentials/google-ads-odontorise.yaml`, gerada por `scripts/google/conectar.py` a partir do `client_secret_odontorise.json` que o administrador envia |
 | Cadastro de clientes | `~/OdontoRise/meta-ads/contas-odontorise.json` |
 | Aprendizados pessoais | `~/OdontoRise/meta-ads/aprendizados-local.md` |
 
-Como criar cada credencial: Guia de IA OdontoRise, página Onboarding, passos 6 e 8.
+Como criar cada credencial: Guia de IA OdontoRise, página Onboarding, passos 6, 7 e 8.
 
 ## Setup (primeira vez e sempre que algo parar)
 

@@ -18,6 +18,7 @@ Em construção, uma parte por vez. Prontas e testadas com dado real em 28/09/20
 | Skill (regras, scripts, referências) | esta pasta | sim |
 | Credencial do Meta de cada pessoa | `~/OdontoRise/credentials/meta-odontorise.env` | nunca |
 | Token pessoal do ClickUp | `~/OdontoRise/credentials/clickup-odontorise.env` | nunca |
+| Credencial do Google Ads de cada pessoa (e o `client_secret_odontorise.json` do app) | `~/OdontoRise/credentials/google-ads-odontorise.yaml` | nunca |
 | Cadastro de clientes, aprendizados locais, auditoria | `~/OdontoRise/meta-ads/` | nunca |
 
 ## Instalar (gestor): um comando, sem conta no GitHub
