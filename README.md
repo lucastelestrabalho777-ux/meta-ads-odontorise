@@ -9,6 +9,8 @@ Molde de estrutura: skill meta-ads-ratos (Ratos de IA). Conteúdo, regras e mét
 
 Em construção, uma parte por vez. Prontas e testadas com dado real em 28/09/2026: biblioteca de conexão (`scripts/lib/`), conferência do ambiente (`scripts/setup.py`) e cadastro de clientes a partir do ClickUp (`scripts/clientes.py`). O que cada skill faz e como pedir está em `SKILL.md`.
 
+03/11/2026: `/carteira-gestor` (`scripts/carteira.py`): tabela da carteira de cada gestor cruzando a ficha do ClickUp (entrada, produto, ticket, satisfação) com a saúde da conta Meta em 7 dias, marcando recentes, bons, melhores e problemas. Só leitura; lê só as contas do cadastro local. Teste offline: `tests/test_carteira.py`.
+
 07/10/2026: `/raio-x-concorrentes` aberto aos gestores (só nos próprios clientes), com rota sem Apify pelo navegador (`scripts/concorrentes/navegador.py`, Playwright + Chromium instalados pelo instalador), trava de token pessoal do Apify, regra de 5 km e seção "Concorrente de outros serviços" no documento.
 
 ## Onde ficam as coisas

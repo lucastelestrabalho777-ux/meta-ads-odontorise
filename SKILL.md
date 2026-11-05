@@ -25,6 +25,7 @@ para pessoas vão no stderr. Erro também vem em JSON, com o campo `hint` dizend
 | `insights.py` métricas, `resultado` e `comparar-janelas` | |
 | `targeting.py` cidades, bairros, públicos, `auditar` conjunto | |
 | `saude.py` saldo, reprovados, gasto sem mensagem, criativo sem mensagem, custo acima de R$35, recência | base de /contas-criticas |
+| `carteira.py` carteira por gestor: ficha do ClickUp (entrada, produto, ticket, satisfação) cruzada com a saúde da conta (`saude.py`, em paralelo), classificando recente, bom, melhor e com problema; `tabela` reimprime a última análise | só leitura; base de /carteira-gestor; só contas do cadastro local |
 | `create.py` subir campanha de captação via WhatsApp; `anuncio-drive` sobe vídeo ou imagem do Google Drive e `anuncio-post` sobe um post orgânico do Instagram num conjunto que já existe | tudo pausado, com trava; a Página do cliente precisa de WhatsApp Business |
 | `drive.py` lista pasta ou arquivo do Google Drive pelo link público | só leitura, sem baixar |
 | `posts.py` posts orgânicos do Instagram do cliente com legenda, métricas e quais já são anúncio | só leitura; base de /radar-criativos |
@@ -43,8 +44,8 @@ que não existe, dizer isso com clareza e oferecer o que já existe. Nunca impro
 
 | Papel | Skills |
 |---|---|
-| Gestor | /meu-dia · /contas-criticas · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive · /radar-criativos · /raio-x-concorrentes · /tempo-de-resposta · /sem-agendamento · /funil-comercial · /campanhas-que-convertem |
-| Head | /contas-criticas · /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding · /preparar-onboarding · /raio-x-concorrentes · /tempo-de-resposta · /sem-agendamento · /funil-comercial · /campanhas-que-convertem |
+| Gestor | /meu-dia · /contas-criticas · /carteira-gestor · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive · /radar-criativos · /raio-x-concorrentes · /tempo-de-resposta · /sem-agendamento · /funil-comercial · /campanhas-que-convertem |
+| Head | /contas-criticas · /carteira-gestor · /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding · /preparar-onboarding · /raio-x-concorrentes · /tempo-de-resposta · /sem-agendamento · /funil-comercial · /campanhas-que-convertem |
 | CS | /agendar-reuniao · /resumo-reuniao · /suporte-grupo · /clientes-saudaveis · /monitorar-grupo |
 | Todos | /atualizar-git-odontorise (baixa a versão nova do pacote sem abrir o Terminal) |
 
