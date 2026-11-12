@@ -1,6 +1,6 @@
 ---
 name: grupos-clientes
-description: Leitura, para a CS, dos grupos de WhatsApp dos clientes ativos em um comando só: quem está esperando resposta há mais de 40 minutos úteis, o que o grupo mostra dos clientes em alerta, clientes com atrito ou reclamação e clientes sem engajamento, cada um com a ação sugerida (mensagem pronta para o gestor ou a liderança). Só lê o WhatsApp de Suporte e o ClickUp, não envia nada. Use quando a CS disser "como estão os grupos", "quem está sem resposta", "clientes sem engajamento", "tem cliente reclamando", "atritos nos grupos", "leitura dos grupos", "o que está pegando nos grupos hoje", "o que o cliente X falou no grupo" ou "/grupos-clientes".
+description: Leitura, para a CS, dos grupos de WhatsApp dos clientes ativos em um comando só: quem está esperando resposta há mais de 40 minutos úteis, o que o grupo mostra dos clientes em alerta, clientes com atrito ou reclamação e clientes sem engajamento, cada um com a ação sugerida (mensagem pronta para o gestor ou a liderança). Só lê o WhatsApp de Suporte e o ClickUp, não envia nada. Use quando a CS disser "como estão os grupos", "quem está sem resposta", "clientes sem engajamento", "tem cliente reclamando", "atritos nos grupos", "leitura dos grupos", "o que está pegando nos grupos hoje", "o que o cliente X falou no grupo", "confere a conexão com o WhatsApp de Suporte" ou "/grupos-clientes".
 ---
 
 # /grupos-clientes (CS)
@@ -36,6 +36,9 @@ lida, não altera grupo e não escreve no ClickUp.
      cliente) e a mensagem interna curta, pronta para ela copiar.
 4. Um cliente só: `grupos.py cliente --cliente "nome ou #código"` traz a conversa dos últimos 7 dias, marcada como
    EQUIPE ou CLIENTE. Use quando ela pedir "detalha o X" ou "o que o X falou no grupo".
+
+5. Conferir a conexão: `grupos.py checar` diz se o número de Suporte está conectado, quantos grupos de cliente ele
+   enxerga e se algum cliente ativo ficou sem grupo. Responda em duas linhas.
 
 ## Quem resolve o quê
 - Resultado, lead, saldo, anúncio, campanha, criativo: gestor do cliente.
