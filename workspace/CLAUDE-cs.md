@@ -8,6 +8,7 @@ qualquer coisa ao Claude: é daqui que ele lê as regras da casa.
 | Caminho | O que é |
 |---|---|
 | `~/OdontoRise/credentials/clickup-odontorise.env` | só o seu token do ClickUp. Nunca compartilhado, nunca enviado. |
+| `~/OdontoRise/credentials/uazapi-odontorise.env` | Server URL e token da instância do WhatsApp de Suporte (Uazapi). Nunca compartilhado, nunca enviado. |
 
 As skills da CS vivem em `~/.claude/skills/` e chegam pelo repositório do GitHub da agência, instaladas com o
 papel CS. Para atualizar, digite /atualizar-git-odontorise no Claude: o papel continua o mesmo.
@@ -21,9 +22,10 @@ papel CS. Para atualizar, digite /atualizar-git-odontorise no Claude: o papel co
 | /agendar-reuniao | horários livres na sua agenda, evento com o cliente convidado, textos para o grupo e para o ClickUp |
 | /clientes-saudaveis | quem está bem no relacionamento (candidatos a depoimento ou indicação) e quem precisa de cuidado |
 | /suporte-grupo | resposta para dúvida ou reclamação no grupo, com o que o ClickUp mostra do cliente |
+| /grupos-clientes | leitura dos grupos de WhatsApp dos clientes: quem espera resposta, clientes em alerta, atritos e sem engajamento |
 
 Os scripts de ClickUp ficam em `~/.claude/skills/meta-ads-odontorise/scripts/` e são permitidos: `cs.py`, `tarefas.py`,
-`onboarding.py` e `alertas.py listar`. Para conferir a conexão com o ClickUp:
+`onboarding.py`, `alertas.py listar` e `grupos.py` (leitura dos grupos de WhatsApp). Para conferir a conexão com o ClickUp:
 `python3 ~/.claude/skills/meta-ads-odontorise/scripts/tarefas.py minhas` (no Windows, `python`).
 
 ## Quem é quem no cliente
@@ -47,9 +49,13 @@ LP, roteiro) é demanda na lista Conteúdos dos Clientes, aberta pelo gestor. Re
 7. Textos sem travessão.
 8. Descrição e comentário de tarefa, alerta, satisfação e opinião interna sobre o cliente são internos: nunca vão para
    texto de cliente ou de grupo.
+9. WhatsApp de Suporte: só leitura, e só pelo `grupos.py`. O Claude nunca envia mensagem por ele, nunca chama a
+   Uazapi por outro caminho e nunca copia trecho de conversa de cliente para o ClickUp, para outro grupo ou para
+   arquivo.
 
 ## Como pedir
 
 - "como está o onboarding" · "resumo dos clientes em alerta" · "marca a reunião mensal com X"
 - "quem está bem para depoimento" · "o cliente X perguntou isso no grupo, como respondo?"
 - "minhas tarefas no ClickUp" · "reuniões dos próximos 7 dias"
+- "como estão os grupos hoje" · "quem está sem resposta" · "o que o cliente X falou no grupo"

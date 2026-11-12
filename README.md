@@ -52,6 +52,10 @@ $env:ODR_PAPEL="cs"; irm https://raw.githubusercontent.com/lucastelestrabalho777
 ```
 Liga só as skills de `papeis/cs.txt`, cria `~/OdontoRise` com o CLAUDE.md da CS (`workspace/CLAUDE-cs.md`) e não instala
 a biblioteca da Meta nem o navegador. A CS precisa só do token do ClickUp (e do Google Calendar no claude.ai).
+Para a /grupos-clientes (leitura dos grupos de WhatsApp dos clientes), a CS cria também
+`~/OdontoRise/credentials/uazapi-odontorise.env` com a Server URL e o token da instância do WhatsApp de Suporte
+(`UAZAPI_SERVER_URL` e `UAZAPI_INSTANCE_TOKEN`). O pacote só lê: `scripts/lib/uazapi.py` recusa qualquer rota de envio.
+Áudio de cliente é transcrito na máquina quando o Whisper está instalado (ver `scripts/transcrever.py`).
 O papel fica gravado em `~/OdontoRise/.papel`, então `/atualizar-git-odontorise` mantém a CS. Quem já tinha o pacote
 completo e roda com `cs` tem as outras skills desligadas (o pacote não é apagado). Para voltar: `bash -s completo`
 (Windows: `$env:ODR_PAPEL="completo"`).
