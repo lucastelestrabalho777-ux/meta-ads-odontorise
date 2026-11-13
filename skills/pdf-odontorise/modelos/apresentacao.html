@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Título da apresentação</title>
+<!-- MODELO OdontoRise: apresentação 16:9. Troque o conteúdo, não mexa no <style>.
+     Cada <section class="slide"> é um slide. De 7 a 9 slides é o normal; texto longo se divide em mais slides.
+     Rodapé: logo à esquerda e número (02, 03...) à direita. A capa e o fechamento não têm número.
+     Use só os tipos de slide que o conteúdo pede e apague os outros. -->
+<style>
+  @page { size: 1920px 1080px; margin: 0; }
+  :root {
+    --bg: #0f1427;
+    --card: #1a2038;
+    --line: #262c45;
+    --teal: #57d8b3;
+    --text: #f2f2f2;
+    --muted: #a6adbf;
+    --soft: #8a93a8;
+    --head: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    --body: Verdana, Geneva, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .slide {
+    width: 1920px; height: 1080px; position: relative; overflow: hidden;
+    background: var(--bg); color: var(--text); padding: 100px 128px 0;
+    page-break-after: always; break-after: page;
+  }
+  .slide:last-child { page-break-after: auto; break-after: auto; }
+
+  .label {
+    font-family: var(--head); font-weight: 700; font-size: 23px;
+    letter-spacing: 0.32em; text-transform: uppercase; color: var(--teal);
+  }
+  h1 {
+    font-family: var(--head); font-weight: 700; font-size: 62px; line-height: 1.08;
+    text-transform: uppercase; color: var(--text); margin-top: 30px; letter-spacing: -0.005em;
+  }
+  .teal { color: var(--teal); }
+
+  .footer {
+    position: absolute; left: 128px; right: 128px; bottom: 58px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--body); font-size: 24px; color: var(--soft);
+  }
+  .footer img { height: 34px; display: block; }
+
+  /* texto corrido */
+  .intro { font-family: var(--body); font-size: 26px; line-height: 1.5; color: var(--text); margin-top: 30px; }
+  .intro.muted { color: var(--muted); margin-top: 12px; }
+  .intro strong, .lead strong { font-weight: 700; color: var(--text); }
+  .lead { font-family: var(--body); font-size: 26px; line-height: 1.5; color: var(--text); margin-top: 26px; }
+  .lead.muted { color: var(--muted); margin-top: 18px; }
+  .prose p { font-family: var(--body); font-size: 24px; line-height: 1.55; color: var(--muted); margin-top: 18px; }
+  .prose p:first-child { margin-top: 0; }
+  .prose p.hi { font-family: var(--head); font-weight: 700; font-size: 38px; line-height: 1.2; color: var(--teal); }
+  .prose strong { color: var(--text); }
+
+  /* cards */
+  .cards { display: grid; gap: 24px; margin-top: 36px; }
+  .cards.c2 { grid-template-columns: repeat(2, 1fr); }
+  .cards.c3 { grid-template-columns: repeat(3, 1fr); }
+  .cards.c4 { grid-template-columns: repeat(4, 1fr); }
+  .cards.c5 { grid-template-columns: repeat(5, 1fr); gap: 20px; }
+  .card { background: var(--card); padding: 34px 36px 38px; border-top: 4px solid var(--teal); }
+  .card.plain { border-top: 0; }
+  .card h3 { font-family: var(--head); font-weight: 700; font-size: 32px; line-height: 1.15; margin-bottom: 16px; }
+  .card p { font-family: var(--body); font-size: 22px; line-height: 1.5; color: var(--muted); }
+  .card p + p { margin-top: 12px; }
+  .num { font-family: var(--head); font-weight: 700; font-size: 54px; color: var(--teal); line-height: 1; margin-bottom: 14px; }
+  .card.hot { background: var(--teal); border-top-color: var(--teal); }
+  .card.hot h3, .card.hot p, .card.hot .num { color: var(--bg); }
+  .cards.c5 .card { padding: 30px 28px 32px; }
+  .cards.c5 .card h3 { font-size: 28px; }
+  .cards.c5 .card p { font-size: 21px; }
+
+  /* linha do tempo */
+  .timeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 34px; }
+  .step { background: var(--card); padding: 28px 28px 32px; border-top: 4px solid var(--teal); }
+  .step b { display: block; font-family: var(--head); font-weight: 700; font-size: 26px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; }
+  .step p { font-family: var(--body); font-size: 21px; line-height: 1.5; color: var(--muted); }
+  .step.w1 { border-top-color: rgba(87,216,179,.25); }
+  .step.w2 { border-top-color: rgba(87,216,179,.45); }
+  .step.w3 { border-top-color: rgba(87,216,179,.7); }
+  .step.hot { background: var(--teal); }
+  .step.hot b, .step.hot p { color: var(--bg); }
+
+  /* rows */
+  .rows { margin-top: 30px; display: grid; gap: 8px; }
+  .row { background: var(--card); display: grid; grid-template-columns: 400px 1fr; align-items: center; padding: 13px 40px; min-height: 64px; }
+  .row b { font-family: var(--head); font-weight: 700; font-size: 29px; color: var(--teal); }
+  .row span { font-family: var(--body); font-size: 23px; line-height: 1.45; color: var(--text); }
+  .rows.wide .row { grid-template-columns: 620px 1fr; }
+  .rows.wide .row b { font-size: 26px; line-height: 1.3; padding-right: 30px; }
+  .rows.wide .row span { color: var(--muted); }
+
+  /* colunas e listas */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; margin-top: 40px; align-items: start; }
+  .split.s64 { grid-template-columns: 1.15fr 0.85fr; }
+  .panel { background: var(--card); padding: 36px 42px 40px; }
+  .panel .label { font-size: 20px; }
+  .list { list-style: none; margin-top: 6px; }
+  .list li { position: relative; padding-left: 34px; font-family: var(--body); font-size: 24px; line-height: 1.45; color: var(--text); margin-top: 16px; }
+  .list li::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 12px; height: 12px; background: var(--teal); }
+  .list.sm li { font-size: 21px; margin-top: 12px; padding-left: 28px; }
+  .list.sm li::before { width: 10px; height: 10px; }
+  .olist { list-style: none; counter-reset: n; margin-top: 6px; }
+  .olist li { counter-increment: n; position: relative; padding-left: 52px; font-family: var(--body); font-size: 24px; line-height: 1.45; color: var(--text); margin-top: 18px; }
+  .olist li::before { content: counter(n); position: absolute; left: 0; top: -2px; font-family: var(--head); font-weight: 700; font-size: 32px; color: var(--teal); }
+  .cols2 { columns: 2; column-gap: 64px; margin-top: 34px; }
+  .cols2 li { break-inside: avoid; margin-top: 0; margin-bottom: 26px; font-size: 26px; }
+
+  /* etapas do checklist */
+  .etapa .label { font-size: 19px; }
+  .etapa .list.sm li { font-size: 23px; margin-top: 16px; }
+  .etapa { padding-bottom: 44px; }
+  .etapa h3 { margin-top: 12px; margin-bottom: 8px; }
+
+  .quote { margin-top: 34px; background: var(--card); border-left: 5px solid var(--teal); padding: 30px 48px 34px; }
+  .quote .label { font-size: 20px; }
+  .quote p { font-family: var(--head); font-style: italic; font-size: 32px; line-height: 1.38; margin-top: 14px; color: var(--text); }
+  .quote.sm p { font-size: 27px; }
+  .quote.sm { padding: 24px 44px 28px; margin-top: 26px; }
+  .cards.tight .card { padding: 28px 30px 30px; }
+  .cards.tight .card h3 { font-size: 28px; margin-bottom: 12px; }
+  .cards.tight .num { font-size: 46px; margin-bottom: 10px; }
+  .cards.tight { gap: 20px; margin-top: 28px; }
+  .cards.tight .card p { font-size: 21px; }
+  .big .card p { font-size: 24px; }
+  .closing .bottom .label { margin-top: 0; }
+  .quote p.note { font-family: var(--body); font-style: normal; font-size: 22px; line-height: 1.5; color: var(--muted); margin-top: 14px; }
+
+  /* capa */
+  .cover { padding-top: 128px; }
+  .cover .logo { height: 62px; display: block; }
+  .cover .label { margin-top: 112px; }
+  .cover h1 { font-size: 136px; line-height: 0.98; margin-top: 34px; letter-spacing: -0.01em; }
+  .cover .kicker { font-family: var(--head); font-weight: 700; font-size: 42px; line-height: 1.2; color: var(--text); margin-top: 40px; }
+  .cover .sub { font-family: var(--body); font-size: 28px; line-height: 1.5; color: var(--muted); margin-top: 22px; max-width: 1500px; }
+  .cover .bottom {
+    position: absolute; left: 128px; right: 128px; bottom: 120px; border-top: 1px solid var(--line); padding-top: 34px;
+    display: flex; justify-content: space-between; font-family: var(--body); font-size: 26px; color: var(--muted);
+  }
+
+  /* slide verde */
+  .statement { background: var(--teal); color: var(--bg); }
+  .statement .label { color: var(--bg); }
+  .statement h1 { color: var(--bg); font-size: 84px; line-height: 1.08; position: absolute; left: 128px; right: 128px; top: 300px; margin: 0; }
+  .statement .sub { position: absolute; left: 128px; right: 220px; bottom: 170px; font-family: var(--body); font-size: 34px; line-height: 1.45; color: var(--bg); }
+  .statement .footer { color: var(--bg); }
+
+  /* discussão (fundo verde com cartão navy) */
+  .talk { background: var(--teal); color: var(--bg); }
+  .talk .label, .talk h1 { color: var(--bg); }
+  .talk .prose p { color: var(--bg); }
+  .talk .prose strong { color: var(--bg); }
+  .talk .panel { background: var(--bg); }
+  .talk .panel .label { color: var(--teal); }
+  .talk .lead, .talk .lead strong { color: var(--bg); }
+  .talk .footer { color: var(--bg); }
+
+  /* fechamento */
+  .closing .logo { height: 62px; display: block; position: absolute; top: 100px; left: 128px; }
+  .closing .label { margin-top: 112px; }
+  .closing h1 { font-size: 72px; line-height: 1.05; margin-top: 24px; }
+  .closing .sub { font-family: var(--body); font-size: 25px; line-height: 1.5; color: var(--muted); margin-top: 30px; max-width: 1620px; }
+  .closing .sub + .sub { margin-top: 14px; }
+  .closing .sub strong { color: var(--text); }
+  .closing .bottom {
+    position: absolute; left: 128px; right: 128px; bottom: 64px; border-top: 1px solid var(--line); padding-top: 28px;
+    display: grid; grid-template-columns: 520px 1fr; gap: 40px; align-items: start;
+    font-family: var(--body); font-size: 24px; line-height: 1.5; color: var(--text);
+  }
+
+  .timeline.t3 { grid-template-columns: repeat(3, 1fr); }
+  .timeline.t4 { grid-template-columns: repeat(4, 1fr); }
+</style>
+</head>
+<body>
+
+<!-- CAPA -->
+<section class="slide cover">
+  <img class="logo" src="logo.png" alt="OdontoRise">
+  <div class="label">Tipo do material · Assunto</div>
+  <h1>Título em<br><span class="teal">duas linhas</span></h1>
+  <div class="sub">Uma frase que diz o que a pessoa vai levar desta apresentação.</div>
+  <div class="bottom"><span>Quem apresenta</span><span>DD · MM · AAAA</span></div>
+</section>
+
+<!-- SLIDE VERDE: a regra ou a ideia central, uma só -->
+<section class="slide statement">
+  <div class="label">A regra</div>
+  <h1>A frase que a pessoa<br>precisa lembrar</h1>
+  <div class="sub">Uma ou duas linhas que explicam a frase.</div>
+  <div class="footer"><span>OdontoRise · Título da apresentação</span><span>02</span></div>
+</section>
+
+<!-- LINHAS: rótulo verde à esquerda e texto à direita -->
+<section class="slide">
+  <div class="label">Rótulo da seção</div>
+  <h1>Título do slide</h1>
+  <div class="rows">
+    <div class="row"><b>Rótulo 1</b><span>Texto da linha.</span></div>
+    <div class="row"><b>Rótulo 2</b><span>Texto da linha.</span></div>
+    <div class="row"><b>Rótulo 3</b><span>Texto da linha.</span></div>
+    <div class="row"><b>Rótulo 4</b><span>Texto da linha.</span></div>
+  </div>
+  <p class="lead muted">Uma frase de apoio embaixo das linhas.</p>
+  <div class="footer"><img src="logo.png" alt="OdontoRise"><span>03</span></div>
+</section>
+
+<!-- CARTÕES: c2, c3, c4 ou c5. "plain" tira a borda verde; "hot" pinta o cartão de verde; "tight" aperta. -->
+<section class="slide">
+  <div class="label">Rótulo da seção</div>
+  <h1>Três pontos lado a lado</h1>
+  <div class="cards c3">
+    <div class="card plain"><div class="num">1</div><h3>Título do cartão</h3><p>Duas ou três linhas de texto.</p></div>
+    <div class="card plain"><div class="num">2</div><h3>Título do cartão</h3><p>Duas ou três linhas de texto.</p></div>
+    <div class="card plain"><div class="num">3</div><h3>Título do cartão</h3><p>Duas ou três linhas de texto.</p></div>
+  </div>
+  <p class="lead"><strong>A conclusão dos três pontos em uma frase.</strong></p>
+  <div class="footer"><img src="logo.png" alt="OdontoRise"><span>04</span></div>
+</section>
+
+<!-- DUAS COLUNAS: texto à esquerda e painel com lista à direita ("split s64" deixa o texto mais largo) -->
+<section class="slide">
+  <div class="label">Rótulo da seção</div>
+  <h1>Texto com lista ao lado</h1>
+  <div class="split s64">
+    <div class="prose">
+      <p><strong>A frase principal do slide.</strong></p>
+      <p>Um parágrafo de contexto.</p>
+      <p>Outro parágrafo, se precisar.</p>
+    </div>
+    <div class="panel">
+      <div class="label">Título da lista</div>
+      <ul class="list">
+        <li>Item da lista</li>
+        <li>Item da lista</li>
+        <li>Item da lista</li>
+        <li>Item da lista</li>
+      </ul>
+    </div>
+  </div>
+  <div class="quote">
+    <div class="label">Aprendizado</div>
+    <p>A frase de destaque do slide.</p>
+  </div>
+  <div class="footer"><img src="logo.png" alt="OdontoRise"><span>05</span></div>
+</section>
+
+<!-- LINHA DO TEMPO: 5 passos (t3 ou t4 para 3 ou 4). O último em verde com "hot". -->
+<section class="slide">
+  <div class="label">Rótulo da seção</div>
+  <h1>Passo a passo</h1>
+  <p class="intro">Uma frase que apresenta a sequência.</p>
+  <div class="timeline">
+    <div class="step w1"><b>Passo 1</b><p>O que acontece aqui.</p></div>
+    <div class="step w2"><b>Passo 2</b><p>O que acontece aqui.</p></div>
+    <div class="step w3"><b>Passo 3</b><p>O que acontece aqui.</p></div>
+    <div class="step"><b>Passo 4</b><p>O que acontece aqui.</p></div>
+    <div class="step hot"><b>Passo 5</b><p>Onde a gente quer chegar.</p></div>
+  </div>
+  <p class="lead muted">Uma frase de apoio.</p>
+  <div class="footer"><img src="logo.png" alt="OdontoRise"><span>06</span></div>
+</section>
+
+<!-- DISCUSSÃO: fundo verde com painel navy, para perguntas ao time -->
+<section class="slide talk">
+  <div class="label">Discussão</div>
+  <h1>Agora queremos ouvir vocês</h1>
+  <div class="split">
+    <div class="prose">
+      <p>O cenário ou a situação que abre a conversa.</p>
+      <p>Mais um parágrafo de contexto.</p>
+    </div>
+    <div class="panel">
+      <div class="label">Perguntas</div>
+      <ol class="olist">
+        <li>Primeira pergunta?</li>
+        <li>Segunda pergunta?</li>
+        <li>Terceira pergunta?</li>
+      </ol>
+    </div>
+  </div>
+  <div class="footer"><span>OdontoRise · Título da apresentação</span><span>07</span></div>
+</section>
+
+<!-- FECHAMENTO -->
+<section class="slide closing">
+  <img class="logo" src="logo.png" alt="OdontoRise">
+  <div class="label">Conclusão</div>
+  <h1>A ideia final<br><span class="teal">em duas linhas</span></h1>
+  <p class="sub"><strong>A frase que resume a apresentação.</strong></p>
+  <p class="sub">Uma frase de apoio.</p>
+  <div class="bottom">
+    <div class="label">Próximo passo</div>
+    <div>O que cada pessoa faz a partir de agora.</div>
+  </div>
+</section>
+
+</body>
+</html>

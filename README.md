@@ -56,6 +56,9 @@ Para a /grupos-clientes (leitura dos grupos de WhatsApp dos clientes), a CS cria
 `~/OdontoRise/credentials/uazapi-odontorise.env` com a Server URL e o token da instância do WhatsApp de Suporte
 (`UAZAPI_SERVER_URL` e `UAZAPI_INSTANCE_TOKEN`). O pacote só lê: `scripts/lib/uazapi.py` recusa qualquer rota de envio.
 Áudio de cliente é transcrito na máquina quando o Whisper está instalado (ver `scripts/transcrever.py`).
+A /pdf-odontorise (todos os papéis) gera PDF no padrão visual da agência com o Chrome ou o Edge do computador, sem instalar
+nada: `scripts/pdf.py novo` copia o modelo de `skills/pdf-odontorise/modelos/` para `~/OdontoRise/pdfs/` e `pdf.py gerar`
+confere o conteúdo e gera o arquivo.
 O papel fica gravado em `~/OdontoRise/.papel`, então `/atualizar-git-odontorise` mantém a CS. Quem já tinha o pacote
 completo e roda com `cs` tem as outras skills desligadas (o pacote não é apagado). Para voltar: `bash -s completo`
 (Windows: `$env:ODR_PAPEL="completo"`).

@@ -47,7 +47,7 @@ que não existe, dizer isso com clareza e oferecer o que já existe. Nunca impro
 | Gestor | /meu-dia · /contas-criticas · /carteira-gestor · /legenda-video · /custo-por-mensagem · /dias-sem-otimizacao · /recarga-saldo · /feedback-sexta · /mensagem-grupo · /sugerir-roteiros · /registrar-otimizacao · /subir-criativos-drive · /radar-criativos · /raio-x-concorrentes · /tempo-de-resposta · /sem-agendamento · /funil-comercial · /campanhas-que-convertem |
 | Head | /contas-criticas · /carteira-gestor · /oportunidades-carteira · /revisao-gestor · /estrategia-conta · /resolver-conflito · /clientes-criticos · /acompanhar-design · /analise-onboarding · /preparar-onboarding · /raio-x-concorrentes · /tempo-de-resposta · /sem-agendamento · /funil-comercial · /campanhas-que-convertem |
 | CS | /agendar-reuniao · /resumo-reuniao · /suporte-grupo · /clientes-saudaveis · /monitorar-grupo |
-| Todos | /atualizar-git-odontorise (baixa a versão nova do pacote sem abrir o Terminal) |
+| Todos | /atualizar-git-odontorise (baixa a versão nova do pacote sem abrir o Terminal) · /pdf-odontorise (PDF no padrão visual da OdontoRise: documento A4 ou apresentação) |
 
 As quatro skills do Metrics (/tempo-de-resposta, /sem-agendamento, /funil-comercial, /campanhas-que-convertem) leem o
 MCP do Metrics (atendimento, agendamento e vendas da clínica), conectado por cada pessoa com o próprio login: passo

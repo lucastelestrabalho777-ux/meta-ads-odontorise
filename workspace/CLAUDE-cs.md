@@ -23,9 +23,10 @@ papel CS. Para atualizar, digite /atualizar-git-odontorise no Claude: o papel co
 | /clientes-saudaveis | quem está bem no relacionamento (candidatos a depoimento ou indicação) e quem precisa de cuidado |
 | /suporte-grupo | resposta para dúvida ou reclamação no grupo, com o que o ClickUp mostra do cliente |
 | /grupos-clientes | leitura dos grupos de WhatsApp dos clientes: quem espera resposta, clientes em alerta, atritos e sem engajamento |
+| /pdf-odontorise | PDF no padrão visual da OdontoRise: documento de leitura em A4 (ata, relatório, comunicado) ou apresentação |
 
 Os scripts de ClickUp ficam em `~/.claude/skills/meta-ads-odontorise/scripts/` e são permitidos: `cs.py`, `tarefas.py`,
-`onboarding.py`, `alertas.py listar` e `grupos.py` (leitura dos grupos de WhatsApp). Para conferir a conexão com o ClickUp:
+`onboarding.py`, `alertas.py listar`, `grupos.py` (leitura dos grupos de WhatsApp) e `pdf.py` (PDF no padrão da agência, salvo em `~/OdontoRise/pdfs/`). Para conferir a conexão com o ClickUp:
 `python3 ~/.claude/skills/meta-ads-odontorise/scripts/tarefas.py minhas` (no Windows, `python`).
 
 ## Quem é quem no cliente

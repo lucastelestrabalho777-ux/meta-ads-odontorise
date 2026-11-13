@@ -7,4 +7,5 @@ agendar-reuniao
 clientes-saudaveis
 suporte-grupo
 grupos-clientes
+pdf-odontorise
 atualizar-git-odontorise

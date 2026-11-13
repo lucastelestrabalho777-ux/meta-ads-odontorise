@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Título do documento</title>
+<!-- MODELO OdontoRise: documento de leitura em A4. Troque o conteúdo, não mexa no <style>.
+     Cada <section class="page"> é uma página e termina com o rodapé .pfoot ("N de total").
+     A 1ª página abre com .masthead; as seguintes abrem com <div class="inner top">.
+     Use só os blocos que o conteúdo pede e apague os outros. -->
+<style>
+  @page { size: 210mm 297mm; margin: 0; }
+  :root {
+    --navy: #0f1427;
+    --card: #1a2038;
+    --teal: #57d8b3;
+    --teal-ink: #127a60;
+    --teal-tint: #eaf8f3;
+    --ink: #262c42;
+    --muted: #5b6378;
+    --line: #e1e4ec;
+    --soft-bg: #f4f6fa;
+    --red: #c8323c;   --red-tint: #fcecec;
+    --amber: #c98a12; --amber-tint: #fdf5e3;
+    --green: #127a60; --green-tint: #eaf8f3;
+    --blue: #3f63c9;  --blue-tint: #edf1fb;
+    --head: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    --body: Verdana, Geneva, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #fff; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .page {
+    width: 210mm; height: 297mm; position: relative; overflow: hidden;
+    background: #fff; color: var(--ink);
+    page-break-after: always; break-after: page;
+  }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  .inner { padding: 0 56px; }
+  .inner.top { padding-top: 34px; }
+
+  /* cabeçalho da 1ª página */
+  .masthead { background: var(--navy); color: #f2f2f2; padding: 36px 56px 30px; }
+  .masthead .top { display: flex; justify-content: space-between; align-items: center; font-family: var(--body); font-size: 11.5px; color: #8a93a8; }
+  .masthead .logo { height: 30px; display: block; }
+  .eyebrow {
+    font-family: var(--head); font-weight: 700; font-size: 11px;
+    letter-spacing: 0.32em; text-transform: uppercase; color: var(--teal);
+  }
+  .masthead .eyebrow { margin-top: 28px; }
+  .masthead h1 {
+    font-family: var(--head); font-weight: 700; font-size: 36px; line-height: 1.08;
+    text-transform: uppercase; margin-top: 12px; letter-spacing: -0.005em;
+  }
+  .masthead h1 .teal { color: var(--teal); }
+  .masthead .sub { font-family: var(--body); font-size: 13px; line-height: 1.6; color: #a6adbf; margin-top: 14px; }
+  .masthead .meta {
+    display: flex; justify-content: space-between; gap: 24px; margin-top: 24px; padding-top: 14px;
+    border-top: 1px solid #262c45; font-family: var(--body); font-size: 11px; color: #8a93a8;
+  }
+
+  /* indicadores */
+  .summary { margin-top: 24px; }
+  .summary .eyebrow, .section .eyebrow, .read .eyebrow { color: var(--teal-ink); }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+  .kpi { background: var(--soft-bg); border-top: 3px solid var(--teal); padding: 13px 15px 14px; }
+  .kpi .val { font-family: var(--head); font-weight: 700; font-size: 28px; color: var(--navy); line-height: 1; }
+  .kpi .val small { font-size: 15px; }
+  .kpi h3 { font-family: var(--head); font-weight: 700; font-size: 12.5px; line-height: 1.3; color: var(--navy); margin-top: 7px; }
+  .kpi p { font-family: var(--body); font-size: 10.5px; line-height: 1.45; color: var(--muted); margin-top: 4px; }
+
+  /* leitura */
+  .read { margin-top: 22px; }
+  .flag { display: grid; grid-template-columns: 112px 1fr; gap: 14px; padding: 11px 16px 12px; margin-top: 8px; border-left: 4px solid; }
+  .flag .tag { font-family: var(--head); font-weight: 700; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.5; }
+  .flag p { font-family: var(--body); font-size: 11.5px; line-height: 1.55; color: var(--ink); }
+  .flag p strong { color: var(--navy); }
+  .flag.red   { background: var(--red-tint);   border-color: var(--red); }   .flag.red .tag { color: var(--red); }
+  .flag.amber { background: var(--amber-tint); border-color: var(--amber); } .flag.amber .tag { color: #9a6a0c; }
+  .flag.green { background: var(--green-tint); border-color: var(--green); } .flag.green .tag { color: var(--green); }
+  .flag.blue  { background: var(--blue-tint);  border-color: var(--blue); }  .flag.blue .tag { color: var(--blue); }
+
+  /* seções */
+  .section { margin-top: 24px; }
+  .section:first-child { margin-top: 0; }
+  .section + .section { padding-top: 22px; border-top: 1px solid var(--line); }
+  .section h2 {
+    font-family: var(--head); font-weight: 700; font-size: 22px; line-height: 1.2;
+    color: var(--navy); display: flex; align-items: baseline; gap: 12px;
+  }
+  .section h2 .n { color: var(--teal-ink); }
+  .section > p, .section .lead { font-family: var(--body); font-size: 12px; line-height: 1.6; color: var(--ink); margin-top: 10px; }
+  .section p strong { color: var(--navy); }
+
+  /* tabelas */
+  table { width: 100%; border-collapse: collapse; margin-top: 14px; font-family: var(--body); font-size: 11px; color: var(--ink); }
+  thead th {
+    font-family: var(--head); font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--navy); text-align: right; padding: 8px 8px; border-bottom: 2px solid var(--navy); vertical-align: bottom;
+  }
+  thead th:first-child { text-align: left; }
+  tbody td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: right; vertical-align: top; line-height: 1.4; }
+  tbody td:first-child { text-align: left; }
+  tbody tr.total td { font-weight: 700; color: var(--navy); background: var(--soft-bg); border-bottom: 2px solid var(--navy); }
+  tbody tr.hl td { background: var(--teal-tint); font-weight: 700; color: var(--navy); }
+  td .id { color: var(--muted); font-size: 9.5px; margin-left: 4px; }
+  td .note { color: var(--muted); font-size: 9.5px; }
+  table.left td, table.left th { text-align: left; }
+  table.compact tbody td { padding: 5px 6px; }
+  table.compact thead th { padding: 8px 6px; }
+  table.nw td { white-space: nowrap; }
+  table.blocks { font-size: 10.5px; }
+  table.blocks thead th { font-size: 9.5px; padding: 8px 5px; }
+  table.blocks tbody td { padding: 8px 5px; }
+  .late { color: var(--red); font-weight: 700; }
+
+  /* listas */
+  ul.pts { list-style: none; margin-top: 12px; }
+  ul.pts li { font-family: var(--body); font-size: 11.5px; line-height: 1.55; padding-left: 16px; position: relative; margin-top: 7px; }
+  ul.pts li::before { content: ""; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; background: var(--teal); }
+  ul.pts li strong { color: var(--navy); }
+
+  /* quadro navy */
+  .box { background: var(--navy); color: #f2f2f2; padding: 22px 26px 24px; margin-top: 20px; }
+  .box h3 { font-family: var(--head); font-weight: 700; font-size: 17px; line-height: 1.25; color: #f2f2f2; }
+  .box p { font-family: var(--body); font-size: 11.5px; line-height: 1.6; color: #a6adbf; margin-top: 10px; }
+  .box p strong { color: #f2f2f2; }
+  .box .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+  .box .grid4 div { background: var(--card); border-top: 2px solid var(--teal); padding: 10px 10px 11px; }
+  .box .grid4 b { display: block; font-family: var(--head); font-size: 22px; color: var(--teal); line-height: 1; }
+  .box .grid4 span { display: block; font-family: var(--body); font-size: 10px; line-height: 1.4; color: #c9cede; margin-top: 6px; }
+
+  /* rodapé */
+  .pfoot {
+    position: absolute; left: 56px; right: 56px; bottom: 30px; padding-top: 11px;
+    border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between;
+    font-family: var(--body); font-size: 10px; color: var(--muted);
+  }
+
+  /* caixa de destaque (objetivo, combinado, próximo passo) */
+  .goal { background: var(--teal-tint); border-left: 4px solid var(--teal); padding: 13px 20px 15px; margin-top: 14px; }
+  .goal .eyebrow { color: var(--teal-ink); font-size: 10.5px; }
+  .goal p { font-family: var(--body); font-size: 12px; line-height: 1.6; color: var(--ink); margin-top: 7px; }
+  .method { background: var(--soft-bg); padding: 16px 20px 18px; margin-top: 16px; }
+  .method .eyebrow { color: var(--teal-ink); }
+  .method ul.pts { margin-top: 8px; }
+  .method ul.pts li { font-size: 10.8px; margin-top: 5px; }
+  .kpis.k2 { grid-template-columns: repeat(2, 1fr); }
+  .kpis.k4 { grid-template-columns: repeat(4, 1fr); }
+</style>
+</head>
+<body>
+
+<!-- PÁGINA 1 -->
+<section class="page">
+  <header class="masthead">
+    <div class="top"><img class="logo" src="logo.png" alt="OdontoRise"><span>DD · MM · AAAA</span></div>
+    <div class="eyebrow">OdontoRise · Área ou assunto</div>
+    <h1>Título do documento<br><span class="teal">segunda linha em verde</span></h1>
+    <p class="sub">Uma frase que diz do que o documento trata e para quem ele é.</p>
+    <div class="meta"><span>Fonte: de onde vieram as informações</span><span>Quem assina · Cargo ou time</span></div>
+  </header>
+
+  <div class="inner">
+    <!-- BLOCO indicadores: 3 por linha (classe k2 ou k4 muda para 2 ou 4). Só número real. -->
+    <div class="summary">
+      <div class="eyebrow">Resumo</div>
+      <div class="kpis">
+        <div class="kpi"><div class="val">00</div><h3>Nome do indicador</h3><p>o que esse número conta</p></div>
+        <div class="kpi"><div class="val">00<small>%</small></div><h3>Nome do indicador</h3><p>o que esse número conta</p></div>
+        <div class="kpi"><div class="val">00 <small>dias</small></div><h3>Nome do indicador</h3><p>o que esse número conta</p></div>
+      </div>
+    </div>
+
+    <!-- BLOCO leitura: sinalização. Classes red, amber, green, blue. -->
+    <div class="read">
+      <div class="eyebrow">Leitura</div>
+      <div class="flag red"><div class="tag">Crítico</div><p><strong>O que precisa de ação agora.</strong> Uma ou duas frases com o fato e o número.</p></div>
+      <div class="flag amber"><div class="tag">Esta semana</div><p><strong>O que precisa de atenção.</strong> Uma ou duas frases.</p></div>
+      <div class="flag green"><div class="tag">Funcionando</div><p><strong>O que está indo bem.</strong> Uma ou duas frases.</p></div>
+      <div class="flag blue"><div class="tag">Combinado</div><p><strong>O que ficou decidido.</strong> Uma ou duas frases.</p></div>
+    </div>
+
+    <!-- BLOCO seção com texto corrido e caixa de destaque -->
+    <div class="section" style="margin-top:24px">
+      <h2><span class="n">1.</span>Título da seção</h2>
+      <p>Texto corrido da seção. Parágrafos curtos, com <strong>o ponto principal em negrito</strong>.</p>
+      <div class="goal">
+        <div class="eyebrow">Objetivo</div>
+        <p>O que se quer com isso, ou o combinado, ou o próximo passo.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="pfoot"><span>OdontoRise · Título do documento</span><span>1 de 2</span></div>
+</section>
+
+<!-- PÁGINA 2 -->
+<section class="page">
+  <div class="inner top">
+    <!-- BLOCO tabela: a 1ª coluna alinha à esquerda e as outras à direita.
+         table class="left" alinha tudo à esquerda; "compact" aperta as linhas; tr class="total" e "hl" destacam. -->
+    <div class="section">
+      <h2><span class="n">2.</span>Seção com tabela</h2>
+      <p>Uma frase dizendo o que a tabela mostra.</p>
+      <table>
+        <thead><tr><th>Item</th><th>Coluna</th><th>Coluna</th><th>Coluna</th></tr></thead>
+        <tbody>
+          <tr><td>Linha 1</td><td>00</td><td>00</td><td>00</td></tr>
+          <tr><td>Linha 2</td><td>00</td><td>00</td><td>00</td></tr>
+          <tr class="hl"><td>Linha em destaque</td><td>00</td><td>00</td><td>00</td></tr>
+          <tr class="total"><td>Total</td><td>00</td><td>00</td><td>00</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- BLOCO lista de pontos -->
+    <div class="section">
+      <h2><span class="n">3.</span>Seção com lista</h2>
+      <ul class="pts">
+        <li><strong>Ponto 1.</strong> Explicação curta.</li>
+        <li><strong>Ponto 2.</strong> Explicação curta.</li>
+        <li><strong>Ponto 3.</strong> Explicação curta.</li>
+      </ul>
+      <div class="method">
+        <div class="eyebrow">Como foi levantado</div>
+        <ul class="pts">
+          <li>Fonte e período dos dados.</li>
+          <li>O que ficou de fora e por quê.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- BLOCO quadro de fechamento (navy). O .grid4 é opcional. -->
+    <div class="box">
+      <h3>Próximos passos</h3>
+      <p><strong>O que acontece agora</strong>, quem faz e até quando.</p>
+      <div class="grid4">
+        <div><b>1</b><span>Primeiro passo</span></div>
+        <div><b>2</b><span>Segundo passo</span></div>
+        <div><b>3</b><span>Terceiro passo</span></div>
+        <div><b>4</b><span>Quarto passo</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pfoot"><span>OdontoRise · Título do documento</span><span>2 de 2</span></div>
+</section>
+
+</body>
+</html>
